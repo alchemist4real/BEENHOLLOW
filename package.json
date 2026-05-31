@@ -9,9 +9,15 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.106.1",
+    "@trystero-p2p/mqtt": "^0.24.0",
+    "@trystero-p2p/nostr": "^0.24.0",
+    "@trystero-p2p/torrent": "^0.24.0",
     "lucide-react": "^0.359.0",
+    "peerjs": "^1.5.5",
     "react": "^18.2.0",
-    "react-dom": "^18.2.0"
+    "react-dom": "^18.2.0",
+    "trystero": "^0.24.0"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.2.1",
