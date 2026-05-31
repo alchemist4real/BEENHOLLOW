@@ -39,143 +39,168 @@ body {
   color: var(--text-primary);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  overscroll-behavior: none;
+  -webkit-tap-highlight-color: transparent;
 }
 
 /* Scrollbar */
-::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar { width: 3px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 4px; }
-::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.15); }
 
-/* Card animations */
+/* Animations */
 @keyframes cardIn {
-  from {
-    opacity: 0;
-    transform: translateY(16px) scale(0.97);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
+  from { opacity: 0; transform: translateY(12px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
 }
-
 @keyframes fadeIn {
   from { opacity: 0; }
   to { opacity: 1; }
 }
-
-@keyframes shimmer {
-  0% { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(100%); }
+  to { opacity: 1; transform: translateY(0); }
 }
-
-@keyframes pulse-ring {
-  0% { transform: scale(0.8); opacity: 1; }
-  100% { transform: scale(2.2); opacity: 0; }
-}
-
 @keyframes float {
   0%, 100% { transform: translateY(0px); }
   50% { transform: translateY(-4px); }
 }
 
-.card-enter {
-  animation: cardIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-}
+.card-enter { animation: cardIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+.fade-in { animation: fadeIn 0.25s ease forwards; }
+.slide-up { animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+.float-anim { animation: float 3s ease-in-out infinite; }
 
-.fade-in {
-  animation: fadeIn 0.3s ease forwards;
-}
-
-.float-anim {
-  animation: float 3s ease-in-out infinite;
-}
-
-/* Glass card base */
+/* Glass card */
 .glass-card {
   background: var(--bg-card);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border: 1px solid var(--border-subtle);
-  border-radius: 16px;
-  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  border-radius: 14px;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
-
 .glass-card:hover {
   background: var(--bg-card-hover);
   border-color: rgba(255, 255, 255, 0.1);
-  transform: translateY(-2px);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
 }
 
-/* Accent glow card */
-.glow-card {
-  position: relative;
-}
+/* Glow */
+.glow-card { position: relative; }
 .glow-card::before {
   content: '';
   position: absolute;
   inset: -1px;
-  border-radius: 17px;
+  border-radius: 15px;
   background: linear-gradient(135deg, var(--accent-glow), transparent 50%);
   z-index: -1;
   opacity: 0;
   transition: opacity 0.3s ease;
 }
-.glow-card:hover::before {
-  opacity: 1;
-}
+.glow-card:hover::before { opacity: 1; }
 
-/* Code display */
+/* Code font */
 .code-display {
   font-family: 'JetBrains Mono', monospace;
   letter-spacing: 0.25em;
   font-weight: 800;
 }
+.font-mono { font-family: 'JetBrains Mono', monospace; }
 
-/* Shimmer loader */
-.shimmer {
-  background: linear-gradient(90deg, transparent, rgba(168, 85, 247, 0.1), transparent);
-  background-size: 200% 100%;
-  animation: shimmer 1.5s infinite;
-}
-
-/* Public room badge pulse */
-.pulse-dot {
-  position: relative;
-}
-.pulse-dot::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: 50%;
-  background: var(--green);
-  animation: pulse-ring 1.5s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
-}
-
-/* Grid background pattern */
-.grid-bg {
-  background-image: 
-    radial-gradient(ellipse at top, rgba(168, 85, 247, 0.05) 0%, transparent 50%),
-    linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
-  background-size: 100% 100%, 40px 40px, 40px 40px;
-}
-
-/* Progress bar */
+/* Progress */
 .progress-bar {
   background: linear-gradient(90deg, var(--accent), #c084fc);
   border-radius: 999px;
   transition: width 0.3s ease;
 }
 
-/* Input focus ring */
+/* Input */
 .input-ring:focus {
   outline: none;
-  box-shadow: 0 0 0 2px var(--accent-dim), 0 0 0 4px rgba(168, 85, 247, 0.1);
+  box-shadow: 0 0 0 2px var(--accent-dim);
 }
 
-/* Mono font util */
-.font-mono {
-  font-family: 'JetBrains Mono', monospace;
+/* Grid bg */
+.grid-bg {
+  background-image:
+    radial-gradient(ellipse at top, rgba(168, 85, 247, 0.04) 0%, transparent 50%),
+    linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px);
+  background-size: 100% 100%, 40px 40px, 40px 40px;
+}
+
+/* Modal overlay */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  animation: fadeIn 0.2s ease;
+}
+.modal-content {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-subtle);
+  border-radius: 20px;
+  width: 100%;
+  max-width: 360px;
+  max-height: 90vh;
+  overflow-y: auto;
+  animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* QR scanner container */
+#qr-reader {
+  width: 100% !important;
+  border: none !important;
+}
+#qr-reader video {
+  border-radius: 12px !important;
+  width: 100% !important;
+}
+#qr-reader__scan_region {
+  min-height: 200px;
+}
+#qr-reader__dashboard {
+  padding: 0 !important;
+}
+#qr-reader__dashboard button {
+  background: var(--accent-dim) !important;
+  border: 1px solid var(--border-accent) !important;
+  color: var(--accent) !important;
+  border-radius: 8px !important;
+  padding: 8px 16px !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  margin: 4px !important;
+}
+#qr-reader__dashboard select {
+  background: var(--bg-card) !important;
+  border: 1px solid var(--border-subtle) !important;
+  color: var(--text-primary) !important;
+  border-radius: 8px !important;
+  padding: 6px 10px !important;
+  font-size: 12px !important;
+}
+#qr-reader__status_span,
+#qr-reader__header_message {
+  color: var(--text-muted) !important;
+  font-size: 11px !important;
+}
+
+/* Mobile specific */
+@media (max-width: 640px) {
+  .glass-card:hover {
+    transform: none;
+    box-shadow: none;
+  }
+  .glow-card::before {
+    display: none;
+  }
 }
