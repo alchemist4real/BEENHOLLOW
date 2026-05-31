@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">beenhollow</string>
+    <string name="title_activity_main">beenhollow</string>
+    <string name="package_name">com.alchemist4real.beenhollow</string>
+    <string name="custom_url_scheme">com.alchemist4real.beenhollow</string>
+</resources>

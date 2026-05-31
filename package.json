@@ -9,6 +9,9 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@capacitor/android": "^8.3.4",
+    "@capacitor/cli": "^8.3.4",
+    "@capacitor/core": "^8.3.4",
     "@supabase/supabase-js": "^2.106.1",
     "@trystero-p2p/mqtt": "^0.24.0",
     "@trystero-p2p/nostr": "^0.24.0",
