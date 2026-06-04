@@ -1,30 +1,44 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700;800;900&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+/* ------------------------------------------------------------------
+   Theme: White Void Monochromatic
+   ------------------------------------------------------------------ */
+
 :root {
-  --bg-primary: #0a0a0f;
-  --bg-secondary: #111118;
-  --bg-card: rgba(255, 255, 255, 0.03);
-  --bg-card-hover: rgba(255, 255, 255, 0.06);
-  --border-subtle: rgba(255, 255, 255, 0.06);
-  --border-accent: rgba(147, 51, 234, 0.3);
-  --text-primary: #f0f0f5;
-  --text-secondary: #8b8b9e;
-  --text-muted: #55556a;
-  --accent: #a855f7;
-  --accent-dim: rgba(168, 85, 247, 0.15);
-  --accent-glow: rgba(168, 85, 247, 0.25);
-  --green: #22c55e;
-  --green-dim: rgba(34, 197, 94, 0.15);
+  --bg-primary: #fafafa;
+  --bg-secondary: #f2f2f2;
+  --bg-card: rgba(0, 0, 0, 0.02);
+  --bg-card-hover: rgba(0, 0, 0, 0.05);
+  --border-subtle: rgba(0, 0, 0, 0.08);
+  --border-accent: rgba(0, 0, 0, 0.2);
+  --text-primary: #0a0a0a;
+  --text-secondary: #444444;
+  --text-muted: #888888;
+  --accent: #111111;
+  --accent-dim: rgba(0, 0, 0, 0.06);
+  --accent-glow: rgba(0, 0, 0, 0.1);
+  --green: #333333;
+  --green-dim: rgba(0, 0, 0, 0.06);
+  --danger: #dc2626;
+  --danger-dim: rgba(220, 38, 38, 0.08);
 }
+
+/* ------------------------------------------------------------------
+   Reset
+   ------------------------------------------------------------------ */
 
 * {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
+}
+
+html {
+  scroll-behavior: smooth;
 }
 
 html, body, #root {
@@ -43,99 +57,160 @@ body {
   -webkit-tap-highlight-color: transparent;
 }
 
-/* Scrollbar */
-::-webkit-scrollbar { width: 3px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 4px; }
+/* ------------------------------------------------------------------
+   Scrollbar
+   ------------------------------------------------------------------ */
 
-/* Animations */
+::-webkit-scrollbar {
+  width: 3px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-secondary);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.18);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.3);
+}
+
+/* ------------------------------------------------------------------
+   Keyframe Animations
+   ------------------------------------------------------------------ */
+
 @keyframes cardIn {
   from { opacity: 0; transform: translateY(12px) scale(0.98); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
 }
+
 @keyframes fadeIn {
   from { opacity: 0; }
-  to { opacity: 1; }
+  to   { opacity: 1; }
 }
+
 @keyframes slideUp {
   from { opacity: 0; transform: translateY(100%); }
-  to { opacity: 1; transform: translateY(0); }
+  to   { opacity: 1; transform: translateY(0); }
 }
+
 @keyframes float {
   0%, 100% { transform: translateY(0px); }
-  50% { transform: translateY(-4px); }
+  50%      { transform: translateY(-4px); }
 }
 
 .card-enter { animation: cardIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-.fade-in { animation: fadeIn 0.25s ease forwards; }
-.slide-up { animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+.fade-in    { animation: fadeIn 0.25s ease forwards; }
+.slide-up   { animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
 .float-anim { animation: float 3s ease-in-out infinite; }
 
-/* Glass card */
-.glass-card {
-  background: var(--bg-card);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid var(--border-subtle);
-  border-radius: 14px;
-  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-}
-.glass-card:hover {
-  background: var(--bg-card-hover);
-  border-color: rgba(255, 255, 255, 0.1);
+/* ------------------------------------------------------------------
+   Typography
+   ------------------------------------------------------------------ */
+
+h1, h2, h3, h4, h5, h6 {
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
 }
 
-/* Glow */
-.glow-card { position: relative; }
+/* ------------------------------------------------------------------
+   Glass Card (clean white, no blur)
+   ------------------------------------------------------------------ */
+
+.glass-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 14px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.glass-card:hover {
+  background: var(--bg-card-hover);
+  border-color: var(--border-accent);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+/* ------------------------------------------------------------------
+   Glow Card (subtle shadow, no gradient)
+   ------------------------------------------------------------------ */
+
+.glow-card {
+  position: relative;
+}
+
 .glow-card::before {
   content: '';
   position: absolute;
   inset: -1px;
   border-radius: 15px;
-  background: linear-gradient(135deg, var(--accent-glow), transparent 50%);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
   z-index: -1;
   opacity: 0;
   transition: opacity 0.3s ease;
 }
-.glow-card:hover::before { opacity: 1; }
 
-/* Code font */
+.glow-card:hover::before {
+  opacity: 1;
+}
+
+/* ------------------------------------------------------------------
+   Code Display
+   ------------------------------------------------------------------ */
+
 .code-display {
   font-family: 'JetBrains Mono', monospace;
-  letter-spacing: 0.25em;
-  font-weight: 800;
+  letter-spacing: 0.2em;
+  font-weight: 900;
 }
-.font-mono { font-family: 'JetBrains Mono', monospace; }
 
-/* Progress */
+.font-mono {
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* ------------------------------------------------------------------
+   Progress Bar
+   ------------------------------------------------------------------ */
+
 .progress-bar {
-  background: linear-gradient(90deg, var(--accent), #c084fc);
+  background: linear-gradient(90deg, #111111, #333333);
   border-radius: 999px;
   transition: width 0.3s ease;
 }
 
-/* Input */
+/* ------------------------------------------------------------------
+   Input Focus Ring
+   ------------------------------------------------------------------ */
+
 .input-ring:focus {
   outline: none;
   box-shadow: 0 0 0 2px var(--accent-dim);
 }
 
-/* Grid bg */
+/* ------------------------------------------------------------------
+   Grid / Dot Background
+   ------------------------------------------------------------------ */
+
 .grid-bg {
-  background-image:
-    radial-gradient(ellipse at top, rgba(168, 85, 247, 0.04) 0%, transparent 50%),
-    linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px);
-  background-size: 100% 100%, 40px 40px, 40px 40px;
+  background-color: var(--bg-primary);
+  background-image: radial-gradient(circle, rgba(0, 0, 0, 0.06) 1px, transparent 1px);
+  background-size: 24px 24px;
 }
 
-/* Modal overlay */
+/* ------------------------------------------------------------------
+   Modal
+   ------------------------------------------------------------------ */
+
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.75);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
   z-index: 100;
   display: flex;
   align-items: center;
@@ -143,32 +218,42 @@ body {
   padding: 16px;
   animation: fadeIn 0.2s ease;
 }
+
 .modal-content {
-  background: var(--bg-secondary);
+  background: #ffffff;
   border: 1px solid var(--border-subtle);
   border-radius: 20px;
   width: 100%;
   max-width: 360px;
   max-height: 90vh;
   overflow-y: auto;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08), 0 1px 4px rgba(0, 0, 0, 0.04);
   animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-/* QR scanner container */
+/* ------------------------------------------------------------------
+   QR Scanner (light theme)
+   ------------------------------------------------------------------ */
+
 #qr-reader {
   width: 100% !important;
   border: none !important;
+  background: var(--bg-primary) !important;
 }
+
 #qr-reader video {
   border-radius: 12px !important;
   width: 100% !important;
 }
+
 #qr-reader__scan_region {
   min-height: 200px;
 }
+
 #qr-reader__dashboard {
   padding: 0 !important;
 }
+
 #qr-reader__dashboard button {
   background: var(--accent-dim) !important;
   border: 1px solid var(--border-accent) !important;
@@ -176,31 +261,177 @@ body {
   border-radius: 8px !important;
   padding: 8px 16px !important;
   font-size: 12px !important;
-  font-weight: 600 !important;
+  font-weight: 700 !important;
   cursor: pointer !important;
   margin: 4px !important;
 }
+
 #qr-reader__dashboard select {
-  background: var(--bg-card) !important;
+  background: #ffffff !important;
   border: 1px solid var(--border-subtle) !important;
   color: var(--text-primary) !important;
   border-radius: 8px !important;
   padding: 6px 10px !important;
   font-size: 12px !important;
 }
+
 #qr-reader__status_span,
 #qr-reader__header_message {
   color: var(--text-muted) !important;
   font-size: 11px !important;
 }
 
-/* Mobile specific */
+/* ------------------------------------------------------------------
+   Landing Page
+   ------------------------------------------------------------------ */
+
+.landing-page {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100%;
+  padding: 32px 24px;
+  text-align: center;
+}
+
+/* ------------------------------------------------------------------
+   Button Base
+   ------------------------------------------------------------------ */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 10px 20px;
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  border: 1px solid var(--border-subtle);
+  border-radius: 10px;
+  background: var(--bg-card);
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.btn:hover {
+  background: var(--bg-card-hover);
+  border-color: var(--border-accent);
+}
+
+.btn:active {
+  transform: scale(0.97);
+}
+
+/* ------------------------------------------------------------------
+   Message Bubble
+   ------------------------------------------------------------------ */
+
+.message-bubble {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 14px;
+  padding: 12px 16px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+/* ------------------------------------------------------------------
+   Link Detected
+   ------------------------------------------------------------------ */
+
+.link-detected {
+  color: var(--text-primary);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  font-weight: 600;
+  transition: opacity 0.15s ease;
+}
+
+.link-detected:hover {
+  opacity: 0.7;
+}
+
+/* ------------------------------------------------------------------
+   Encryption Badge
+   ------------------------------------------------------------------ */
+
+.encrypt-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  background: var(--accent-dim);
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px;
+}
+
+/* ------------------------------------------------------------------
+   iOS Safe Area
+   ------------------------------------------------------------------ */
+
+.safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* Hide scrollbar for horizontal scroll areas */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* ------------------------------------------------------------------
+   Mobile
+   ------------------------------------------------------------------ */
+
 @media (max-width: 640px) {
   .glass-card:hover {
     transform: none;
-    box-shadow: none;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
   }
+
   .glow-card::before {
     display: none;
+  }
+
+  .modal-content {
+    max-width: 100%;
+    border-radius: 16px;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .btn {
+    min-height: 48px;
+    font-size: 15px;
+  }
+
+  /* Ensure minimum touch targets */
+  button,
+  a,
+  input,
+  select,
+  textarea {
+    min-height: 44px;
+  }
+
+  /* Smooth momentum scrolling for scrollable areas */
+  [style*="overflow"],
+  .overflow-y-auto,
+  .overflow-auto {
+    -webkit-overflow-scrolling: touch;
   }
 }

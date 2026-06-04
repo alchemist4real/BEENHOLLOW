@@ -17,6 +17,7 @@
     "@trystero-p2p/nostr": "^0.24.0",
     "@trystero-p2p/torrent": "^0.24.0",
     "html5-qrcode": "^2.3.8",
+    "jszip": "^3.10.1",
     "lucide-react": "^0.359.0",
     "peerjs": "^1.5.5",
     "qrcode": "^1.5.4",

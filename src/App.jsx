@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import QRCode from 'qrcode';
 
@@ -13,11 +13,66 @@ function genCode(len = 5) {
 }
 
 const CHUNK_SIZE = 50000;
-const BASE_URL = window.location.origin + window.location.pathname;
+const BASE_URL = typeof window !== 'undefined' ? window.location.origin + window.location.pathname : '';
 
-// ─── Icons ──────────────────────────────────────────────────
-const Icon = ({ d, size = 18, ...p }) => (
-  <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...p}>{d}</svg>
+// ─── Encryption helpers (AES-GCM) ──────────────────────────
+async function deriveKey(password, salt) {
+  const enc = new TextEncoder();
+  const keyMaterial = await crypto.subtle.importKey('raw', enc.encode(password), 'PBKDF2', false, ['deriveKey']);
+  return crypto.subtle.deriveKey(
+    { name: 'PBKDF2', salt: enc.encode(salt), iterations: 100000, hash: 'SHA-256' },
+    keyMaterial,
+    { name: 'AES-GCM', length: 256 },
+    false,
+    ['encrypt', 'decrypt']
+  );
+}
+
+async function encryptText(text, password, roomCode) {
+  const key = await deriveKey(password, roomCode);
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const enc = new TextEncoder();
+  const ciphertext = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, enc.encode(text));
+  const combined = new Uint8Array(iv.length + ciphertext.byteLength);
+  combined.set(iv);
+  combined.set(new Uint8Array(ciphertext), iv.length);
+  return btoa(String.fromCharCode(...combined));
+}
+
+async function decryptText(b64, password, roomCode) {
+  try {
+    const key = await deriveKey(password, roomCode);
+    const raw = Uint8Array.from(atob(b64), c => c.charCodeAt(0));
+    const iv = raw.slice(0, 12);
+    const ciphertext = raw.slice(12);
+    const plainBuf = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, ciphertext);
+    return new TextDecoder().decode(plainBuf);
+  } catch {
+    return '[Decryption failed - wrong key?]';
+  }
+}
+
+// ─── Link detection ─────────────────────────────────────────
+const URL_REGEX = /(https?:\/\/[^\s<]+[^\s<.,;:!?"')\]])/g;
+
+function Linkify({ text }) {
+  const parts = text.split(URL_REGEX);
+  return (
+    <>
+      {parts.map((part, i) =>
+        URL_REGEX.test(part) ? (
+          <a key={i} href={part} target="_blank" rel="noopener noreferrer" className="link-detected">{part}</a>
+        ) : (
+          <span key={i}>{part}</span>
+        )
+      )}
+    </>
+  );
+}
+
+// ─── Icons (SVG, no emoji) ──────────────────────────────────
+const Icon = ({ d, size = 18, className = '', ...p }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} {...p}>{d}</svg>
 );
 const IconSend = (p) => <Icon {...p} d={<><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></>} />;
 const IconClip = (p) => <Icon {...p} d={<path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/>} />;
@@ -27,6 +82,7 @@ const IconCopy = (p) => <Icon {...p} size={14} d={<><rect width="14" height="14"
 const IconCheck = (p) => <Icon {...p} size={14} d={<path d="M20 6 9 17l-5-5"/>} />;
 const IconGlobe = (p) => <Icon {...p} size={14} d={<><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></>} />;
 const IconLock = (p) => <Icon {...p} size={14} d={<><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></>} />;
+const IconUnlock = (p) => <Icon {...p} size={14} d={<><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/></>} />;
 const IconUsers = (p) => <Icon {...p} size={14} d={<><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></>} />;
 const IconLoader = (p) => <Icon {...p} className="animate-spin" d={<path d="M21 12a9 9 0 1 1-6.219-8.56"/>} />;
 const IconX = (p) => <Icon {...p} size={16} d={<><path d="M18 6 6 18"/><path d="m6 6 12 12"/></>} />;
@@ -34,11 +90,29 @@ const IconText = (p) => <Icon {...p} size={14} d={<><path d="M17 6.1H3"/><path d
 const IconArrowRight = (p) => <Icon {...p} size={13} d={<><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></>} />;
 const IconQR = (p) => <Icon {...p} size={16} d={<><rect x="2" y="2" width="8" height="8" rx="1"/><rect x="14" y="2" width="8" height="8" rx="1"/><rect x="2" y="14" width="8" height="8" rx="1"/><path d="M14 14h2v2h-2z"/><path d="M20 14h2v2h-2z"/><path d="M14 20h2v2h-2z"/><path d="M20 20h2v2h-2z"/><path d="M17 17h2v2h-2z"/></>} />;
 const IconCamera = (p) => <Icon {...p} size={16} d={<><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></>} />;
+const IconClock = (p) => <Icon {...p} size={14} d={<><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></>} />;
+const IconArchive = (p) => <Icon {...p} size={16} d={<><path d="m21 8-2-2H5L3 8"/><rect x="3" y="8" width="18" height="12" rx="1"/><path d="M10 12h4"/></>} />;
+const IconShield = (p) => <Icon {...p} size={14} d={<><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/></>} />;
+const IconPlus = (p) => <Icon {...p} size={18} d={<><path d="M12 5v14"/><path d="M5 12h14"/></>} />;
+const IconArrowLeft = (p) => <Icon {...p} size={18} d={<><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></>} />;
+
+// ─── Logo SVG (hollow circle monogram) ──────────────────────
+function Logo({ size = 32 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="20" cy="20" r="18" stroke="currentColor" strokeWidth="2.5" />
+      <circle cx="20" cy="20" r="6" stroke="currentColor" strokeWidth="2" />
+      <line x1="20" y1="2" x2="20" y2="14" stroke="currentColor" strokeWidth="1.5" />
+      <line x1="20" y1="26" x2="20" y2="38" stroke="currentColor" strokeWidth="1.5" />
+      <line x1="2" y1="20" x2="14" y2="20" stroke="currentColor" strokeWidth="1.5" />
+      <line x1="26" y1="20" x2="38" y2="20" stroke="currentColor" strokeWidth="1.5" />
+    </svg>
+  );
+}
 
 // ─── QR Scanner Modal ───────────────────────────────────────
 function QRScannerModal({ onScan, onClose }) {
   const scannerRef = useRef(null);
-  const containerRef = useRef(null);
 
   useEffect(() => {
     let scanner = null;
@@ -62,23 +136,21 @@ function QRScannerModal({ onScan, onClose }) {
     };
     initScanner();
     return () => {
-      if (scannerRef.current) {
-        scannerRef.current.stop().catch(() => {});
-      }
+      if (scannerRef.current) scannerRef.current.stop().catch(() => {});
     };
   }, [onScan]);
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content p-4" onClick={e => e.stopPropagation()}>
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>Scan QR Code</h3>
-          <button onClick={onClose} className="p-1.5 rounded-lg" style={{ color: 'var(--text-muted)', background: 'var(--bg-card)' }}>
+      <div className="modal-content p-5" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-sm font-black uppercase tracking-wider" style={{ color: 'var(--text-primary)' }}>Scan QR Code</h3>
+          <button onClick={onClose} className="btn p-2 rounded-xl" style={{ color: 'var(--text-muted)', background: 'var(--bg-card)' }}>
             <IconX />
           </button>
         </div>
-        <div id="qr-reader-container" ref={containerRef} style={{ borderRadius: '12px', overflow: 'hidden' }} />
-        <p className="text-[10px] text-center mt-3" style={{ color: 'var(--text-muted)' }}>
+        <div id="qr-reader-container" style={{ borderRadius: '12px', overflow: 'hidden' }} />
+        <p className="text-[10px] text-center mt-3 font-medium" style={{ color: 'var(--text-muted)' }}>
           Point camera at a BEENHOLLOW QR code
         </p>
       </div>
@@ -93,30 +165,26 @@ function QRDisplayModal({ roomCode, onClose }) {
 
   useEffect(() => {
     QRCode.toDataURL(roomUrl, {
-      width: 280,
-      margin: 2,
-      color: { dark: '#a855f7', light: '#0a0a0f' },
+      width: 280, margin: 2,
+      color: { dark: '#000000', light: '#fafafa' },
       errorCorrectionLevel: 'M'
     }).then(setQrDataUrl).catch(console.error);
   }, [roomUrl]);
 
-  const copyUrl = () => {
-    navigator.clipboard.writeText(roomUrl);
-  };
+  const copyUrl = () => navigator.clipboard.writeText(roomUrl);
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content p-5" onClick={e => e.stopPropagation()}>
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>Share Room</h3>
-          <button onClick={onClose} className="p-1.5 rounded-lg" style={{ color: 'var(--text-muted)', background: 'var(--bg-card)' }}>
+      <div className="modal-content p-6" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between mb-5">
+          <h3 className="text-sm font-black uppercase tracking-wider" style={{ color: 'var(--text-primary)' }}>Share Room</h3>
+          <button onClick={onClose} className="btn p-2 rounded-xl" style={{ color: 'var(--text-muted)', background: 'var(--bg-card)' }}>
             <IconX />
           </button>
         </div>
-
-        <div className="flex flex-col items-center gap-4">
+        <div className="flex flex-col items-center gap-5">
           {qrDataUrl ? (
-            <div className="p-3 rounded-2xl" style={{ background: 'var(--bg-card)', border: '1px solid var(--border-accent)' }}>
+            <div className="p-4 rounded-2xl" style={{ background: 'var(--bg-primary)', border: '2px solid var(--border-accent)' }}>
               <img src={qrDataUrl} alt="Room QR Code" className="block" style={{ width: '240px', height: '240px', borderRadius: '12px' }} />
             </div>
           ) : (
@@ -124,40 +192,230 @@ function QRDisplayModal({ roomCode, onClose }) {
               <IconLoader size={24} style={{ color: 'var(--accent)' }} />
             </div>
           )}
-
           <div className="text-center">
-            <p className="text-[10px] uppercase font-bold mb-1" style={{ color: 'var(--text-muted)' }}>Room Code</p>
-            <p className="text-2xl code-display" style={{ color: 'var(--accent)' }}>{roomCode}</p>
+            <p className="text-[10px] uppercase font-black mb-1 tracking-wider" style={{ color: 'var(--text-muted)' }}>Room Code</p>
+            <p className="text-3xl code-display" style={{ color: 'var(--accent)' }}>{roomCode}</p>
           </div>
-
-          <button
-            onClick={copyUrl}
-            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold transition-all"
-            style={{ background: 'var(--accent-dim)', border: '1px solid var(--border-accent)', color: 'var(--accent)' }}
-          >
-            <IconCopy size={14} />
-            Copy Link
+          <button onClick={copyUrl} className="btn w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-xs font-bold transition-all" style={{ background: 'var(--accent-dim)', border: '1px solid var(--border-accent)', color: 'var(--accent)' }}>
+            <IconCopy size={14} /> Copy Link
           </button>
-
-          <p className="text-[10px] text-center break-all px-2" style={{ color: 'var(--text-muted)' }}>
-            {roomUrl}
-          </p>
+          <p className="text-[10px] text-center break-all px-2 font-medium" style={{ color: 'var(--text-muted)' }}>{roomUrl}</p>
         </div>
       </div>
     </div>
   );
 }
 
+// ─── Encryption Password Modal ──────────────────────────────
+function EncryptionModal({ onSubmit, onClose, isJoining }) {
+  const [password, setPassword] = useState('');
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-content p-6" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-sm font-black uppercase tracking-wider" style={{ color: 'var(--text-primary)' }}>
+            {isJoining ? 'Enter Room Key' : 'Set Encryption Key'}
+          </h3>
+          <button onClick={onClose} className="btn p-2 rounded-xl" style={{ color: 'var(--text-muted)', background: 'var(--bg-card)' }}>
+            <IconX />
+          </button>
+        </div>
+        <p className="text-xs mb-4 leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
+          {isJoining
+            ? 'This room is encrypted. Enter the passphrase to decrypt messages.'
+            : 'Set a passphrase to encrypt all messages in this room. Share this passphrase with participants.'}
+        </p>
+        <input
+          type="password" value={password}
+          onChange={e => setPassword(e.target.value)}
+          onKeyDown={e => e.key === 'Enter' && password.trim() && onSubmit(password.trim())}
+          placeholder="Enter passphrase..."
+          autoFocus
+          className="w-full px-4 py-3 rounded-xl text-sm font-semibold input-ring mb-4"
+          style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', color: 'var(--text-primary)' }}
+        />
+        <button
+          onClick={() => password.trim() && onSubmit(password.trim())}
+          disabled={!password.trim()}
+          className="btn w-full py-3 rounded-xl text-sm font-black uppercase tracking-wider transition-all disabled:opacity-30"
+          style={{ background: 'var(--accent)', color: 'var(--bg-primary)' }}
+        >
+          {isJoining ? 'Decrypt Room' : 'Enable Encryption'}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ─── Hold Room Duration Modal ───────────────────────────────
+function HoldRoomModal({ onSubmit, onClose }) {
+  const durations = [
+    { label: '12 Hours', hours: 12 },
+    { label: '24 Hours', hours: 24 },
+    { label: '48 Hours', hours: 48 },
+    { label: '96 Hours', hours: 96 },
+  ];
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-content p-6" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-sm font-black uppercase tracking-wider" style={{ color: 'var(--text-primary)' }}>Hold Room</h3>
+          <button onClick={onClose} className="btn p-2 rounded-xl" style={{ color: 'var(--text-muted)', background: 'var(--bg-card)' }}>
+            <IconX />
+          </button>
+        </div>
+        <p className="text-xs mb-5 leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
+          Files and messages will persist in this room for the selected duration. Anyone with the room code can access them.
+        </p>
+        <div className="grid grid-cols-2 gap-3">
+          {durations.map(d => (
+            <button
+              key={d.hours}
+              onClick={() => onSubmit(d.hours)}
+              className="btn py-4 rounded-xl text-center transition-all"
+              style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', color: 'var(--text-primary)' }}
+            >
+              <div className="text-lg font-black">{d.hours}h</div>
+              <div className="text-[10px] font-semibold uppercase tracking-wider mt-1" style={{ color: 'var(--text-muted)' }}>{d.label}</div>
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── LANDING PAGE ───────────────────────────────────────────
+function LandingPage({ onCreateRoom, onJoinRoom, publicRooms, onJoinPublic, onScanQR }) {
+  const [joinCode, setJoinCode] = useState('');
+  const [showScanner, setShowScanner] = useState(false);
+
+  const handleJoin = () => {
+    const code = joinCode.trim().toUpperCase();
+    if (code) onJoinRoom(code);
+  };
+
+  const handleQRScan = (text) => {
+    setShowScanner(false);
+    onScanQR(text);
+  };
+
+  return (
+    <div className="min-h-screen flex flex-col" style={{ background: 'var(--bg-primary)' }}>
+      {/* Main content */}
+      <div className="flex-1 flex flex-col items-center justify-center px-6 py-12">
+        {/* Logo & Title */}
+        <div className="text-center mb-12">
+          <div className="mb-6 flex justify-center" style={{ color: 'var(--text-primary)' }}>
+            <Logo size={56} />
+          </div>
+          <h1 className="text-4xl sm:text-5xl font-black tracking-tighter mb-3" style={{ color: 'var(--text-primary)', letterSpacing: '-0.04em' }}>
+            BEENHOLLOW
+          </h1>
+          <p className="text-sm font-medium" style={{ color: 'var(--text-muted)' }}>
+            Drop files into the void.
+          </p>
+        </div>
+
+        {/* Action cards */}
+        <div className="w-full max-w-sm space-y-4">
+          {/* Create Room */}
+          <button
+            onClick={onCreateRoom}
+            className="w-full py-5 px-6 rounded-2xl text-left transition-all active:scale-[0.98] cursor-pointer"
+            style={{ background: 'var(--accent)', color: 'var(--bg-primary)', border: 'none' }}
+          >
+            <div className="flex items-center justify-between w-full">
+              <div>
+                <div className="text-sm font-black uppercase tracking-wider">Create Room</div>
+                <div className="text-[11px] font-medium mt-1 opacity-50">Start a new void</div>
+              </div>
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: 'rgba(255,255,255,0.15)' }}>
+                <IconPlus size={20} />
+              </div>
+            </div>
+          </button>
+
+          {/* Join Room */}
+          <div className="rounded-2xl overflow-hidden" style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)' }}>
+            <div className="p-5">
+              <div className="text-sm font-black uppercase tracking-wider mb-4" style={{ color: 'var(--text-primary)' }}>Join Room</div>
+              <div className="flex gap-2">
+                <input
+                  type="text" value={joinCode}
+                  onChange={e => setJoinCode(e.target.value.toUpperCase())}
+                  onKeyDown={e => e.key === 'Enter' && handleJoin()}
+                  placeholder="ENTER CODE"
+                  maxLength={5}
+                  className="flex-1 px-4 py-3 rounded-xl text-sm font-bold text-center code-display input-ring"
+                  style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-subtle)', color: 'var(--text-primary)' }}
+                />
+                <button onClick={handleJoin} className="btn px-5 py-3 rounded-xl text-sm font-black transition-all" style={{ background: 'var(--accent-dim)', border: '1px solid var(--border-accent)', color: 'var(--accent)' }}>
+                  Go
+                </button>
+              </div>
+            </div>
+            <div className="px-5 pb-4">
+              <button onClick={() => setShowScanner(true)} className="btn w-full flex items-center justify-center gap-2 py-3 rounded-xl text-xs font-bold transition-all" style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-subtle)', color: 'var(--text-secondary)' }}>
+                <IconCamera size={16} /> Scan QR Code
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Public rooms */}
+        {publicRooms.length > 0 && (
+          <div className="w-full max-w-sm mt-8">
+            <div className="flex items-center gap-2 mb-3">
+              <IconGlobe size={12} style={{ color: 'var(--text-muted)' }} />
+              <p className="text-[10px] font-black uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Public Rooms</p>
+            </div>
+            <div className="space-y-2">
+              {publicRooms.map(room => (
+                <button
+                  key={room.code}
+                  onClick={() => onJoinPublic(room.code)}
+                  className="btn w-full flex items-center justify-between px-4 py-3 rounded-xl transition-all"
+                  style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)' }}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-2 h-2 rounded-full" style={{ background: 'var(--accent)' }} />
+                    <span className="text-sm font-black code-display" style={{ color: 'var(--text-primary)' }}>{room.code}</span>
+                    <span className="text-[10px] font-semibold" style={{ color: 'var(--text-muted)' }}>{room.peers} online</span>
+                  </div>
+                  <IconArrowRight style={{ color: 'var(--text-muted)' }} />
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Footer credit */}
+      <footer className="py-6 text-center">
+        <p className="text-[10px] font-semibold uppercase tracking-widest" style={{ color: 'var(--text-muted)' }}>
+          by alchemist4real
+        </p>
+      </footer>
+
+      {showScanner && <QRScannerModal onScan={handleQRScan} onClose={() => setShowScanner(false)} />}
+    </div>
+  );
+}
+
 // ─── MAIN APP ───────────────────────────────────────────────
 export default function App() {
+  const [currentView, setCurrentView] = useState('landing'); // 'landing' | 'room'
   const [messages, setMessages] = useState([]);
   const [inputText, setInputText] = useState('');
   const [peerCount, setPeerCount] = useState(0);
   const [isConnected, setIsConnected] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const [myCode, setMyCode] = useState('');
-  const [joinCode, setJoinCode] = useState('');
   const [copied, setCopied] = useState(false);
+  const [copiedMsgId, setCopiedMsgId] = useState(null);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [downloadProgress, setDownloadProgress] = useState({});
   const [isPublic, setIsPublic] = useState(false);
@@ -167,6 +425,16 @@ export default function App() {
   const [showQR, setShowQR] = useState(false);
   const [showScanner, setShowScanner] = useState(false);
 
+  // Encryption state
+  const [isEncrypted, setIsEncrypted] = useState(false);
+  const [encryptionPassword, setEncryptionPassword] = useState('');
+  const [showEncryptionModal, setShowEncryptionModal] = useState(false);
+
+  // Hold room state
+  const [holdDuration, setHoldDuration] = useState(0); // hours, 0 = no hold
+  const [showHoldModal, setShowHoldModal] = useState(false);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
+
   const channelRef = useRef(null);
   const lobbyRef = useRef(null);
   const scrollRef = useRef(null);
@@ -174,6 +442,12 @@ export default function App() {
   const heartbeatRef = useRef(null);
   const myCodeRef = useRef('');
   const hasAutoJoined = useRef(false);
+  const encryptRef = useRef({ enabled: false, password: '' });
+
+  // Keep encryptRef in sync
+  useEffect(() => {
+    encryptRef.current = { enabled: isEncrypted, password: encryptionPassword };
+  }, [isEncrypted, encryptionPassword]);
 
   // ─── Check URL for ?room= param ──────────────────────────
   const getUrlRoomCode = useCallback(() => {
@@ -183,9 +457,7 @@ export default function App() {
 
   // ─── Lobby ────────────────────────────────────────────────
   useEffect(() => {
-    const lobby = supabase.channel('beenhollow_lobby', {
-      config: { broadcast: { ack: false } }
-    });
+    const lobby = supabase.channel('beenhollow_lobby', { config: { broadcast: { ack: false } } });
     lobby.on('broadcast', { event: 'room_announce' }, ({ payload }) => {
       setPublicRooms(prev => {
         const filtered = prev.filter(r => r.code !== payload.code);
@@ -208,7 +480,7 @@ export default function App() {
     return () => clearInterval(t);
   }, []);
 
-  // ─── Init room code ───────────────────────────────────────
+  // ─── Init ─────────────────────────────────────────────────
   useEffect(() => {
     const urlRoom = getUrlRoomCode();
     const code = genCode();
@@ -217,8 +489,7 @@ export default function App() {
     if (urlRoom) {
       setCurrentRoom(urlRoom);
       hasAutoJoined.current = true;
-    } else {
-      setCurrentRoom(code);
+      setCurrentView('room');
     }
   }, [getUrlRoomCode]);
 
@@ -227,16 +498,77 @@ export default function App() {
     if (heartbeatRef.current) clearInterval(heartbeatRef.current);
     if (isPublic && currentRoom) {
       const announce = () => {
-        lobbyRef.current?.send({
-          type: 'broadcast', event: 'room_announce',
-          payload: { code: currentRoom, peers: peerCount + 1 }
-        });
+        lobbyRef.current?.send({ type: 'broadcast', event: 'room_announce', payload: { code: currentRoom, peers: peerCount + 1 } });
       };
       announce();
       heartbeatRef.current = setInterval(announce, 10000);
     }
     return () => { if (heartbeatRef.current) clearInterval(heartbeatRef.current); };
   }, [isPublic, peerCount, currentRoom]);
+
+  // ─── Load persisted messages ──────────────────────────────
+  const loadPersistedMessages = useCallback(async (roomCode) => {
+    setIsLoadingHistory(true);
+    try {
+      const { data, error } = await supabase
+        .from('room_messages')
+        .select('*')
+        .eq('room_code', roomCode)
+        .gt('expires_at', new Date().toISOString())
+        .order('created_at', { ascending: true });
+
+      if (error) { console.error('Failed to load history:', error); return; }
+      if (!data || data.length === 0) return;
+
+      const loaded = data.map(row => {
+        if (row.msg_type === 'text') {
+          return {
+            id: row.id, type: 'text', text: row.content,
+            isMe: false, sender: row.sender || 'saved', time: new Date(row.created_at), persisted: true
+          };
+        } else if (row.msg_type === 'file') {
+          let url = null;
+          if (row.file_data) {
+            try {
+              const bs = atob(row.file_data);
+              const ab = new ArrayBuffer(bs.length);
+              const ia = new Uint8Array(ab);
+              for (let i = 0; i < bs.length; i++) ia[i] = bs.charCodeAt(i);
+              url = URL.createObjectURL(new Blob([ab], { type: row.file_mime || 'application/octet-stream' }));
+            } catch (e) { console.error('File restore error:', e); }
+          }
+          return {
+            id: row.id, type: 'file', fileName: row.file_name || 'file',
+            fileSize: row.file_size || 0, url, isMe: false, sender: row.sender || 'saved',
+            time: new Date(row.created_at), persisted: true
+          };
+        }
+        return null;
+      }).filter(Boolean);
+
+      setMessages(prev => [...loaded, ...prev]);
+    } catch (err) { console.error('Load history error:', err); }
+    finally { setIsLoadingHistory(false); }
+  }, []);
+
+  // ─── Persist a message to Supabase ────────────────────────
+  const persistMessage = useCallback(async (roomCode, msg, fileBase64 = null) => {
+    if (holdDuration <= 0) return;
+    const expiresAt = new Date(Date.now() + holdDuration * 3600 * 1000).toISOString();
+    try {
+      await supabase.from('room_messages').insert({
+        room_code: roomCode,
+        sender: myCodeRef.current,
+        msg_type: msg.type === 'file' ? 'file' : 'text',
+        content: msg.type === 'text' ? msg.text : null,
+        file_name: msg.fileName || null,
+        file_mime: msg.fileMime || null,
+        file_size: msg.fileSize || null,
+        file_data: fileBase64 || null,
+        expires_at: expiresAt
+      });
+    } catch (err) { console.error('Persist error:', err); }
+  }, [holdDuration]);
 
   // ─── Channel setup ────────────────────────────────────────
   const setupChannel = useCallback((code, isHost) => {
@@ -248,10 +580,15 @@ export default function App() {
     channelRef.current = channel;
     setCurrentRoom(code);
 
-    channel.on('broadcast', { event: 'message' }, ({ payload }) => {
+    channel.on('broadcast', { event: 'message' }, async ({ payload }) => {
+      let text = payload.text;
+      if (payload.encrypted && encryptRef.current.enabled) {
+        text = await decryptText(payload.text, encryptRef.current.password, code);
+      }
       setMessages(prev => [...prev, {
-        id: `${Date.now()}-${Math.random()}`, type: 'text', text: payload.text,
-        isMe: false, sender: payload.sender || 'anon', time: new Date()
+        id: `${Date.now()}-${Math.random()}`, type: 'text', text,
+        isMe: false, sender: payload.sender || 'anon', time: new Date(),
+        encrypted: payload.encrypted || false
       }]);
     });
 
@@ -286,54 +623,75 @@ export default function App() {
       setIsConnected(count > 1);
     });
     channel.on('presence', { event: 'join' }, ({ key }) => {
-      if (key !== myCodeRef.current) setMessages(prev => [...prev, { id: `sys-${Date.now()}`, type: 'system', text: 'A device joined', time: new Date() }]);
+      if (key !== myCodeRef.current) setMessages(prev => [...prev, { id: `sys-${Date.now()}`, type: 'system', text: 'A device joined the room', time: new Date() }]);
     });
     channel.on('presence', { event: 'leave' }, ({ key }) => {
-      if (key !== myCodeRef.current) setMessages(prev => [...prev, { id: `sys-${Date.now()}`, type: 'system', text: 'A device left', time: new Date() }]);
+      if (key !== myCodeRef.current) setMessages(prev => [...prev, { id: `sys-${Date.now()}`, type: 'system', text: 'A device left the room', time: new Date() }]);
     });
     channel.subscribe(async (status) => {
       if (status === 'SUBSCRIBED') await channel.track({ online_at: new Date().toISOString() });
     });
-  }, []);
 
-  // Auto-connect
+    // Load persisted messages
+    loadPersistedMessages(code);
+  }, [loadPersistedMessages]);
+
+  // Auto-connect when room is set and we're in room view
   useEffect(() => {
-    if (currentRoom) {
+    if (currentRoom && currentView === 'room') {
       setupChannel(currentRoom, !hasAutoJoined.current);
     }
     return () => { if (channelRef.current) supabase.removeChannel(channelRef.current); };
-  }, [currentRoom, setupChannel]);
+  }, [currentRoom, currentView, setupChannel]);
 
-  // ─── Join ─────────────────────────────────────────────────
+  // ─── Create Room ──────────────────────────────────────────
+  const createRoom = useCallback(() => {
+    const code = myCode || genCode();
+    setMessages([]);
+    setCurrentRoom(code);
+    window.history.replaceState({}, '', `${window.location.pathname}?room=${code}`);
+    setCurrentView('room');
+  }, [myCode]);
+
+  // ─── Join Room ────────────────────────────────────────────
   const joinRoom = useCallback((codeOverride) => {
-    const code = (codeOverride || joinCode).trim().toUpperCase();
+    const code = (codeOverride || '').trim().toUpperCase();
     if (!code) return;
     setMessages([]);
     if (isPublic) {
       lobbyRef.current?.send({ type: 'broadcast', event: 'room_close', payload: { code: currentRoom } });
       setIsPublic(false);
     }
-    // Update URL without reload
     window.history.replaceState({}, '', `${window.location.pathname}?room=${code}`);
-    setupChannel(code, false);
-    setJoinCode('');
+    setCurrentRoom(code);
+    setCurrentView('room');
     setShowPublicRooms(false);
     setShowScanner(false);
-  }, [joinCode, setupChannel, isPublic, currentRoom]);
+  }, [isPublic, currentRoom]);
+
+  // ─── Back to landing ──────────────────────────────────────
+  const goToLanding = useCallback(() => {
+    if (channelRef.current) supabase.removeChannel(channelRef.current);
+    if (isPublic) {
+      lobbyRef.current?.send({ type: 'broadcast', event: 'room_close', payload: { code: currentRoom } });
+      setIsPublic(false);
+    }
+    setMessages([]);
+    setCurrentView('landing');
+    setIsEncrypted(false);
+    setEncryptionPassword('');
+    setHoldDuration(0);
+    window.history.replaceState({}, '', window.location.pathname);
+  }, [isPublic, currentRoom]);
 
   // ─── QR scan handler ──────────────────────────────────────
   const handleQRScan = useCallback((text) => {
     try {
       const url = new URL(text);
       const code = url.searchParams.get('room');
-      if (code) {
-        joinRoom(code);
-      }
+      if (code) joinRoom(code);
     } catch {
-      // Maybe it's just a room code directly
-      if (/^[A-Z0-9]{4,6}$/.test(text.trim().toUpperCase())) {
-        joinRoom(text.trim().toUpperCase());
-      }
+      if (/^[A-Z0-9]{4,6}$/.test(text.trim().toUpperCase())) joinRoom(text.trim().toUpperCase());
     }
   }, [joinRoom]);
 
@@ -347,18 +705,59 @@ export default function App() {
     }
   }, [isPublic, currentRoom]);
 
+  // ─── Toggle encryption ────────────────────────────────────
+  const handleEnableEncryption = useCallback((password) => {
+    setEncryptionPassword(password);
+    setIsEncrypted(true);
+    setShowEncryptionModal(false);
+    setMessages(prev => [...prev, { id: `sys-enc-${Date.now()}`, type: 'system', text: 'Encryption enabled for this room', time: new Date() }]);
+  }, []);
+
+  const toggleEncryption = useCallback(() => {
+    if (isEncrypted) {
+      setIsEncrypted(false);
+      setEncryptionPassword('');
+      setMessages(prev => [...prev, { id: `sys-enc-${Date.now()}`, type: 'system', text: 'Encryption disabled', time: new Date() }]);
+    } else {
+      setShowEncryptionModal(true);
+    }
+  }, [isEncrypted]);
+
+  // ─── Hold room ────────────────────────────────────────────
+  const handleHoldRoom = useCallback((hours) => {
+    setHoldDuration(hours);
+    setShowHoldModal(false);
+    setMessages(prev => [...prev, { id: `sys-hold-${Date.now()}`, type: 'system', text: `Room held for ${hours} hours`, time: new Date() }]);
+  }, []);
+
   // Auto-scroll
   useEffect(() => { scrollRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages, downloadProgress]);
 
   // ─── Send text ────────────────────────────────────────────
-  const handleSendText = useCallback((e) => {
+  const handleSendText = useCallback(async (e) => {
     e?.preventDefault();
     const text = inputText.trim();
     if (!text || !channelRef.current) return;
-    setMessages(prev => [...prev, { id: `${Date.now()}`, type: 'text', text, isMe: true, time: new Date() }]);
-    channelRef.current.send({ type: 'broadcast', event: 'message', payload: { text, sender: myCodeRef.current } });
+
+    setMessages(prev => [...prev, { id: `${Date.now()}`, type: 'text', text, isMe: true, time: new Date(), encrypted: isEncrypted }]);
+
+    let sendText = text;
+    if (isEncrypted && encryptionPassword) {
+      sendText = await encryptText(text, encryptionPassword, currentRoom);
+    }
+
+    channelRef.current.send({
+      type: 'broadcast', event: 'message',
+      payload: { text: sendText, sender: myCodeRef.current, encrypted: isEncrypted }
+    });
+
+    // Persist if held
+    if (holdDuration > 0) {
+      persistMessage(currentRoom, { type: 'text', text });
+    }
+
     setInputText('');
-  }, [inputText]);
+  }, [inputText, isEncrypted, encryptionPassword, currentRoom, holdDuration, persistMessage]);
 
   // ─── Send file ────────────────────────────────────────────
   const handleFileUpload = useCallback(async (e) => {
@@ -377,8 +776,53 @@ export default function App() {
         setUploadProgress(Math.floor(((i + 1) / totalChunks) * 100));
         await new Promise(r => setTimeout(r, 20));
       }
+      // Persist if held
+      if (holdDuration > 0) {
+        persistMessage(currentRoom, { type: 'file', fileName: file.name, fileMime: file.type, fileSize: file.size }, base64);
+      }
     } catch (err) { console.error('File send error:', err); }
     finally { setIsSending(false); setUploadProgress(0); e.target.value = null; }
+  }, [holdDuration, currentRoom, persistMessage]);
+
+  // ─── Download all files ───────────────────────────────────
+  const downloadAllFiles = useCallback(async () => {
+    const fileMessages = messages.filter(m => m.type === 'file' && m.url);
+    if (fileMessages.length === 0) return;
+
+    if (fileMessages.length === 1) {
+      const a = document.createElement('a');
+      a.href = fileMessages[0].url;
+      a.download = fileMessages[0].fileName;
+      a.click();
+      return;
+    }
+
+    // Dynamic import JSZip
+    try {
+      const JSZip = (await import('jszip')).default;
+      const zip = new JSZip();
+      for (const fm of fileMessages) {
+        try {
+          const resp = await fetch(fm.url);
+          const blob = await resp.blob();
+          zip.file(fm.fileName, blob);
+        } catch (e) { console.error('Failed to add file to zip:', fm.fileName, e); }
+      }
+      const content = await zip.generateAsync({ type: 'blob' });
+      const url = URL.createObjectURL(content);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `beenhollow_${currentRoom}_files.zip`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (err) { console.error('Download all error:', err); }
+  }, [messages, currentRoom]);
+
+  // ─── Copy text ────────────────────────────────────────────
+  const copyMessageText = useCallback((msgId, text) => {
+    navigator.clipboard.writeText(text);
+    setCopiedMsgId(msgId);
+    setTimeout(() => setCopiedMsgId(null), 2000);
   }, []);
 
   // ─── Utils ────────────────────────────────────────────────
@@ -392,57 +836,125 @@ export default function App() {
   const fmtTime = (d) => d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   const ext = (n) => { const e = n.split('.').pop()?.toUpperCase() || '?'; return e.length > 5 ? e.slice(0, 4) : e; };
 
-  // ─── RENDER ───────────────────────────────────────────────
+  const fileCount = useMemo(() => messages.filter(m => m.type === 'file' && m.url).length, [messages]);
+
+  // ─── LANDING VIEW ─────────────────────────────────────────
+  if (currentView === 'landing') {
+    return (
+      <LandingPage
+        onCreateRoom={createRoom}
+        onJoinRoom={joinRoom}
+        publicRooms={publicRooms}
+        onJoinPublic={joinRoom}
+        onScanQR={handleQRScan}
+      />
+    );
+  }
+
+  // ─── ROOM VIEW ────────────────────────────────────────────
   return (
     <div className="flex flex-col h-screen" style={{ background: 'var(--bg-primary)' }}>
 
-      {/* ━━━ HEADER ━━━ */}
-      <header className="flex-shrink-0 px-3 sm:px-5 py-2.5 flex items-center justify-between gap-2" style={{ borderBottom: '1px solid var(--border-subtle)' }}>
-        <div className="flex items-center gap-2 min-w-0">
-          <div className="w-7 h-7 rounded-lg flex items-center justify-center text-sm flex-shrink-0" style={{ background: 'var(--accent-dim)' }}>🌌</div>
-          <div className="min-w-0">
-            <h1 className="text-sm font-bold tracking-tight truncate" style={{ color: 'var(--text-primary)' }}>BEENHOLLOW</h1>
+      {/* HEADER */}
+      <header className="flex-shrink-0 px-4 sm:px-6 py-3 flex items-center justify-between gap-3" style={{ borderBottom: '2px solid var(--border-subtle)' }}>
+        <div className="flex items-center gap-3 min-w-0">
+          <button onClick={goToLanding} className="btn p-2 rounded-xl flex-shrink-0 transition-all" style={{ color: 'var(--text-secondary)' }}>
+            <IconArrowLeft />
+          </button>
+          <div className="flex items-center gap-2 min-w-0">
+            <div className="flex-shrink-0" style={{ color: 'var(--text-primary)' }}>
+              <Logo size={24} />
+            </div>
+            <h1 className="text-sm font-black tracking-tight truncate uppercase" style={{ color: 'var(--text-primary)' }}>BEENHOLLOW</h1>
           </div>
         </div>
-        <div className="flex items-center gap-1.5 flex-shrink-0">
-          {/* Scan QR */}
-          <button onClick={() => setShowScanner(true)} className="p-2 rounded-lg transition-colors" style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', color: 'var(--text-muted)' }} title="Scan QR">
-            <IconCamera />
-          </button>
-          {/* Public rooms */}
-          <button onClick={() => setShowPublicRooms(!showPublicRooms)} className="p-2 rounded-lg transition-colors relative" style={{ background: showPublicRooms ? 'var(--accent-dim)' : 'var(--bg-card)', border: `1px solid ${showPublicRooms ? 'var(--border-accent)' : 'var(--border-subtle)'}`, color: showPublicRooms ? 'var(--accent)' : 'var(--text-muted)' }}>
-            <IconGlobe />
-            {publicRooms.length > 0 && (
-              <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full text-[8px] font-bold flex items-center justify-center" style={{ background: 'var(--green)', color: '#fff' }}>{publicRooms.length}</span>
-            )}
-          </button>
+        <div className="flex items-center gap-2 flex-shrink-0">
           {/* Peer count */}
-          <div className="flex items-center gap-1.5 px-2.5 py-2 rounded-lg" style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)' }}>
-            <span className="relative flex h-1.5 w-1.5">
-              <span className={`absolute inline-flex h-full w-full rounded-full opacity-75 ${isConnected ? 'animate-ping' : ''}`} style={{ background: isConnected ? 'var(--green)' : '#f59e0b' }} />
-              <span className="relative inline-flex rounded-full h-1.5 w-1.5" style={{ background: isConnected ? 'var(--green)' : '#f59e0b' }} />
+          <div className="flex items-center gap-2 px-3 py-2 rounded-xl" style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)' }}>
+            <span className="relative flex h-2 w-2">
+              <span className={`absolute inline-flex h-full w-full rounded-full opacity-75 ${isConnected ? 'animate-ping' : ''}`} style={{ background: isConnected ? 'var(--accent)' : 'var(--text-muted)' }} />
+              <span className="relative inline-flex rounded-full h-2 w-2" style={{ background: isConnected ? 'var(--accent)' : 'var(--text-muted)' }} />
             </span>
-            <span className="text-[11px] font-semibold" style={{ color: 'var(--text-secondary)' }}>{peerCount}</span>
+            <span className="text-xs font-bold" style={{ color: 'var(--text-secondary)' }}>{peerCount}</span>
           </div>
         </div>
       </header>
 
-      {/* ━━━ PUBLIC ROOMS PANEL ━━━ */}
+      {/* TOOLBAR */}
+      <div className="flex-shrink-0 px-4 sm:px-6 py-2.5 flex items-center gap-2 overflow-x-auto no-scrollbar" style={{ borderBottom: '1px solid var(--border-subtle)', background: 'var(--bg-secondary)' }}>
+        {/* Room code */}
+        <div className="flex items-center gap-1.5 px-3 py-2 rounded-xl flex-shrink-0" style={{ background: 'var(--accent-dim)', border: '1px solid var(--border-accent)' }}>
+          <span className="text-[9px] uppercase font-black tracking-wider" style={{ color: 'var(--text-muted)' }}>Room</span>
+          <span className="code-display text-xs" style={{ color: 'var(--accent)' }}>{currentRoom}</span>
+          <button onClick={copyCode} className="p-1 rounded" style={{ color: 'var(--text-muted)' }}>
+            {copied ? <IconCheck style={{ color: 'var(--accent)' }} /> : <IconCopy />}
+          </button>
+        </div>
+
+        {/* QR */}
+        <button onClick={() => setShowQR(true)} className="btn p-2.5 rounded-xl flex-shrink-0 transition-all" style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', color: 'var(--text-secondary)' }} title="Share QR">
+          <IconQR />
+        </button>
+
+        {/* Scan */}
+        <button onClick={() => setShowScanner(true)} className="btn p-2.5 rounded-xl flex-shrink-0 transition-all" style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', color: 'var(--text-secondary)' }} title="Scan QR">
+          <IconCamera />
+        </button>
+
+        {/* Public toggle */}
+        <button onClick={togglePublic} className="btn flex items-center gap-1.5 px-3 py-2.5 rounded-xl text-[11px] font-bold flex-shrink-0 transition-all" style={{ background: isPublic ? 'var(--accent-dim)' : 'var(--bg-card)', border: `1px solid ${isPublic ? 'var(--border-accent)' : 'var(--border-subtle)'}`, color: isPublic ? 'var(--accent)' : 'var(--text-muted)' }}>
+          {isPublic ? <IconGlobe /> : <IconLock />}
+          <span className="hidden sm:inline">{isPublic ? 'Public' : 'Private'}</span>
+        </button>
+
+        {/* Encryption toggle */}
+        <button onClick={toggleEncryption} className="btn flex items-center gap-1.5 px-3 py-2.5 rounded-xl text-[11px] font-bold flex-shrink-0 transition-all" style={{ background: isEncrypted ? 'var(--accent-dim)' : 'var(--bg-card)', border: `1px solid ${isEncrypted ? 'var(--border-accent)' : 'var(--border-subtle)'}`, color: isEncrypted ? 'var(--accent)' : 'var(--text-muted)' }} title={isEncrypted ? 'Encrypted' : 'Not encrypted'}>
+          {isEncrypted ? <IconShield /> : <IconUnlock />}
+          <span className="hidden sm:inline">{isEncrypted ? 'Encrypted' : 'Encrypt'}</span>
+        </button>
+
+        {/* Hold room */}
+        <button onClick={() => setShowHoldModal(true)} className="btn flex items-center gap-1.5 px-3 py-2.5 rounded-xl text-[11px] font-bold flex-shrink-0 transition-all" style={{ background: holdDuration > 0 ? 'var(--accent-dim)' : 'var(--bg-card)', border: `1px solid ${holdDuration > 0 ? 'var(--border-accent)' : 'var(--border-subtle)'}`, color: holdDuration > 0 ? 'var(--accent)' : 'var(--text-muted)' }} title="Hold Room">
+          <IconClock />
+          <span className="hidden sm:inline">{holdDuration > 0 ? `${holdDuration}h` : 'Hold'}</span>
+        </button>
+
+        {/* Download all */}
+        {fileCount > 0 && (
+          <button onClick={downloadAllFiles} className="btn flex items-center gap-1.5 px-3 py-2.5 rounded-xl text-[11px] font-bold flex-shrink-0 transition-all" style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', color: 'var(--text-secondary)' }} title="Download All Files">
+            <IconArchive />
+            <span className="hidden sm:inline">All ({fileCount})</span>
+          </button>
+        )}
+
+        {/* Spacer */}
+        <div className="flex-1 min-w-[4px]" />
+
+        {/* Browse public rooms */}
+        <button onClick={() => setShowPublicRooms(!showPublicRooms)} className="btn p-2.5 rounded-xl flex-shrink-0 transition-all relative" style={{ background: showPublicRooms ? 'var(--accent-dim)' : 'var(--bg-card)', border: `1px solid ${showPublicRooms ? 'var(--border-accent)' : 'var(--border-subtle)'}`, color: showPublicRooms ? 'var(--accent)' : 'var(--text-muted)' }}>
+          <IconGlobe />
+          {publicRooms.length > 0 && (
+            <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full text-[8px] font-black flex items-center justify-center" style={{ background: 'var(--accent)', color: 'var(--bg-primary)' }}>{publicRooms.length}</span>
+          )}
+        </button>
+      </div>
+
+      {/* PUBLIC ROOMS PANEL */}
       {showPublicRooms && (
-        <div className="flex-shrink-0 px-3 sm:px-5 py-2.5 fade-in" style={{ borderBottom: '1px solid var(--border-subtle)', background: 'var(--bg-secondary)' }}>
+        <div className="flex-shrink-0 px-4 sm:px-6 py-3 fade-in" style={{ borderBottom: '1px solid var(--border-subtle)', background: 'var(--bg-secondary)' }}>
           <div className="flex items-center justify-between mb-2">
-            <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--text-secondary)' }}>Public Rooms</p>
+            <p className="text-[10px] font-black uppercase tracking-wider" style={{ color: 'var(--text-secondary)' }}>Public Rooms</p>
             <button onClick={() => setShowPublicRooms(false)} className="p-1 rounded" style={{ color: 'var(--text-muted)' }}><IconX /></button>
           </div>
           {publicRooms.length === 0 ? (
-            <p className="text-[11px] py-1" style={{ color: 'var(--text-muted)' }}>No public rooms. Toggle yours public!</p>
+            <p className="text-xs py-1" style={{ color: 'var(--text-muted)' }}>No public rooms available. Toggle yours public.</p>
           ) : (
-            <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1">
+            <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1 no-scrollbar">
               {publicRooms.map(room => (
-                <button key={room.code} onClick={() => joinRoom(room.code)} className="flex-shrink-0 glass-card px-3 py-2 rounded-lg flex items-center gap-2">
-                  <div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: 'var(--green)' }} />
-                  <span className="text-[11px] font-bold code-display" style={{ color: 'var(--text-primary)' }}>{room.code}</span>
-                  <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>{room.peers}</span>
+                <button key={room.code} onClick={() => joinRoom(room.code)} className="btn flex-shrink-0 px-4 py-2.5 rounded-xl flex items-center gap-2 transition-all" style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)' }}>
+                  <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: 'var(--accent)' }} />
+                  <span className="text-xs font-black code-display" style={{ color: 'var(--text-primary)' }}>{room.code}</span>
+                  <span className="text-[10px] font-semibold" style={{ color: 'var(--text-muted)' }}>{room.peers}</span>
                   <IconArrowRight style={{ color: 'var(--text-muted)' }} />
                 </button>
               ))}
@@ -451,72 +963,40 @@ export default function App() {
         </div>
       )}
 
-      {/* ━━━ ROOM BAR ━━━ */}
-      <div className="flex-shrink-0 px-3 sm:px-5 py-2 flex items-center gap-1.5 overflow-x-auto" style={{ borderBottom: '1px solid var(--border-subtle)', background: 'var(--bg-secondary)' }}>
-        {/* Room code */}
-        <div className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg flex-shrink-0" style={{ background: 'var(--accent-dim)', border: '1px solid var(--border-accent)' }}>
-          <span className="text-[9px] uppercase font-bold" style={{ color: 'var(--text-muted)' }}>Room</span>
-          <span className="code-display text-xs" style={{ color: 'var(--accent)' }}>{currentRoom}</span>
-          <button onClick={copyCode} className="p-0.5 rounded" style={{ color: 'var(--text-muted)' }}>
-            {copied ? <IconCheck style={{ color: 'var(--green)' }} /> : <IconCopy />}
-          </button>
-        </div>
+      {/* MAIN CONTENT */}
+      <main className="flex-1 overflow-y-auto p-4 sm:p-6 grid-bg" style={{ WebkitOverflowScrolling: 'touch' }}>
+        {isLoadingHistory && (
+          <div className="flex items-center justify-center py-4 fade-in">
+            <IconLoader size={16} style={{ color: 'var(--text-muted)' }} />
+            <span className="ml-2 text-xs font-semibold" style={{ color: 'var(--text-muted)' }}>Loading saved messages...</span>
+          </div>
+        )}
 
-        {/* Show QR */}
-        <button onClick={() => setShowQR(true)} className="p-2 rounded-lg flex-shrink-0 transition-colors" style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', color: 'var(--text-muted)' }} title="Show QR Code">
-          <IconQR />
-        </button>
-
-        {/* Public toggle */}
-        <button onClick={togglePublic} className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold flex-shrink-0 transition-colors" style={{ background: isPublic ? 'var(--green-dim)' : 'var(--bg-card)', border: `1px solid ${isPublic ? 'rgba(34,197,94,0.3)' : 'var(--border-subtle)'}`, color: isPublic ? 'var(--green)' : 'var(--text-muted)' }}>
-          {isPublic ? <IconGlobe /> : <IconLock />}
-          <span className="hidden sm:inline">{isPublic ? 'Public' : 'Private'}</span>
-        </button>
-
-        {/* Spacer */}
-        <div className="flex-1 min-w-[8px]" />
-
-        {/* Join input */}
-        <div className="flex items-center gap-1 flex-shrink-0">
-          <input
-            type="text" value={joinCode}
-            onChange={e => setJoinCode(e.target.value.toUpperCase())}
-            onKeyDown={e => e.key === 'Enter' && joinRoom()}
-            placeholder="CODE" maxLength={5}
-            className="w-[72px] px-2 py-1.5 rounded-lg text-[11px] font-bold text-center code-display input-ring"
-            style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', color: 'var(--text-primary)' }}
-          />
-          <button onClick={() => joinRoom()} className="px-2.5 py-1.5 rounded-lg text-[11px] font-bold transition-colors" style={{ background: 'var(--accent-dim)', border: '1px solid var(--border-accent)', color: 'var(--accent)' }}>
-            Join
-          </button>
-        </div>
-      </div>
-
-      {/* ━━━ MAIN CONTENT ━━━ */}
-      <main className="flex-1 overflow-y-auto p-3 sm:p-5 grid-bg">
-        {messages.length === 0 && Object.keys(downloadProgress).length === 0 ? (
+        {messages.length === 0 && Object.keys(downloadProgress).length === 0 && !isLoadingHistory ? (
           <div className="h-full flex flex-col items-center justify-center px-4">
-            <div className="text-center max-w-xs space-y-5">
-              <div className="float-anim">
-                <div className="w-16 h-16 mx-auto rounded-2xl flex items-center justify-center text-2xl glass-card" style={{ borderColor: 'var(--border-accent)' }}>🌌</div>
+            <div className="text-center max-w-xs space-y-6">
+              <div className="float-anim" style={{ color: 'var(--text-primary)' }}>
+                <div className="w-20 h-20 mx-auto rounded-2xl flex items-center justify-center" style={{ background: 'var(--bg-card)', border: '2px solid var(--border-accent)' }}>
+                  <Logo size={40} />
+                </div>
               </div>
               <div>
-                <h2 className="text-lg font-bold mb-1.5" style={{ color: 'var(--text-primary)' }}>Welcome to the Void</h2>
-                <p className="text-[11px] leading-relaxed" style={{ color: 'var(--text-muted)' }}>
-                  Drop files & text into this room. Share via QR code or room code.
+                <h2 className="text-xl font-black mb-2 uppercase tracking-tight" style={{ color: 'var(--text-primary)' }}>The Void Awaits</h2>
+                <p className="text-xs leading-relaxed font-medium" style={{ color: 'var(--text-muted)' }}>
+                  Drop files and text into this room. Share via QR code or room code.
                 </p>
               </div>
-              <div className="glass-card p-4 text-left" style={{ borderColor: 'var(--border-accent)' }}>
-                <div className="text-center mb-3">
-                  <p className="text-[9px] uppercase font-bold mb-1" style={{ color: 'var(--text-muted)' }}>Your Room</p>
-                  <p className="text-2xl code-display" style={{ color: 'var(--accent)' }}>{currentRoom}</p>
+              <div className="p-5 rounded-2xl text-left" style={{ background: 'var(--bg-card)', border: '1px solid var(--border-accent)' }}>
+                <div className="text-center mb-4">
+                  <p className="text-[9px] uppercase font-black mb-1 tracking-wider" style={{ color: 'var(--text-muted)' }}>Your Room</p>
+                  <p className="text-3xl code-display" style={{ color: 'var(--accent)' }}>{currentRoom}</p>
                 </div>
                 <div className="flex gap-2">
-                  <button onClick={() => setShowQR(true)} className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-[11px] font-semibold transition-colors" style={{ background: 'var(--accent-dim)', border: '1px solid var(--border-accent)', color: 'var(--accent)' }}>
-                    <IconQR /> Share QR
+                  <button onClick={() => setShowQR(true)} className="btn flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-xs font-bold transition-all" style={{ background: 'var(--accent)', color: 'var(--bg-primary)' }}>
+                    <IconQR size={14} /> Share QR
                   </button>
-                  <button onClick={() => setShowScanner(true)} className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-[11px] font-semibold transition-colors" style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', color: 'var(--text-secondary)' }}>
-                    <IconCamera /> Scan QR
+                  <button onClick={() => setShowScanner(true)} className="btn flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-xs font-bold transition-all" style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-subtle)', color: 'var(--text-secondary)' }}>
+                    <IconCamera size={14} /> Scan QR
                   </button>
                 </div>
               </div>
@@ -527,50 +1007,63 @@ export default function App() {
             {messages.map((msg, idx) => {
               if (msg.type === 'system') {
                 return (
-                  <div key={msg.id} className="card-enter text-center py-1" style={{ animationDelay: `${Math.min(idx * 20, 200)}ms` }}>
-                    <span className="text-[10px] px-3 py-1 rounded-full font-medium" style={{ background: 'var(--bg-card)', color: 'var(--text-muted)', border: '1px solid var(--border-subtle)' }}>{msg.text}</span>
+                  <div key={msg.id} className="card-enter text-center py-1.5" style={{ animationDelay: `${Math.min(idx * 20, 200)}ms` }}>
+                    <span className="text-[10px] px-4 py-1.5 rounded-full font-bold uppercase tracking-wider" style={{ background: 'var(--bg-card)', color: 'var(--text-muted)', border: '1px solid var(--border-subtle)' }}>{msg.text}</span>
                   </div>
                 );
               }
               if (msg.type === 'text') {
                 return (
-                  <div key={msg.id} className="card-enter glass-card glow-card p-3 sm:p-4" style={{ animationDelay: `${Math.min(idx * 20, 200)}ms` }}>
-                    <div className="flex items-start gap-2.5">
-                      <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: msg.isMe ? 'var(--accent-dim)' : 'var(--bg-card)', border: `1px solid ${msg.isMe ? 'var(--border-accent)' : 'var(--border-subtle)'}` }}>
-                        <IconText style={{ color: msg.isMe ? 'var(--accent)' : 'var(--text-muted)' }} />
+                  <div key={msg.id} className="card-enter message-bubble p-4 sm:p-5 group" style={{ animationDelay: `${Math.min(idx * 20, 200)}ms` }}>
+                    <div className="flex items-start gap-3">
+                      <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: msg.isMe ? 'var(--accent)' : 'var(--bg-card)', border: msg.isMe ? 'none' : '1px solid var(--border-subtle)' }}>
+                        <IconText style={{ color: msg.isMe ? 'var(--bg-primary)' : 'var(--text-muted)' }} />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-[13px] leading-relaxed whitespace-pre-wrap break-words" style={{ color: 'var(--text-primary)' }}>{msg.text}</p>
-                        <div className="flex items-center gap-1.5 mt-1.5">
-                          <span className="text-[10px] font-medium" style={{ color: 'var(--text-muted)' }}>{msg.isMe ? 'You' : msg.sender || 'Remote'}</span>
-                          <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>·</span>
+                        <p className="text-sm leading-relaxed whitespace-pre-wrap break-words font-medium" style={{ color: 'var(--text-primary)' }}>
+                          <Linkify text={msg.text} />
+                        </p>
+                        <div className="flex items-center gap-2 mt-2">
+                          <span className="text-[10px] font-bold" style={{ color: 'var(--text-muted)' }}>{msg.isMe ? 'You' : msg.sender || 'Remote'}</span>
                           <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>{fmtTime(msg.time)}</span>
+                          {msg.encrypted && <IconShield size={10} style={{ color: 'var(--text-muted)' }} />}
+                          {msg.persisted && <IconClock size={10} style={{ color: 'var(--text-muted)' }} />}
                         </div>
                       </div>
+                      <button
+                        onClick={() => copyMessageText(msg.id, msg.text)}
+                        className="btn p-2 rounded-lg flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity sm:opacity-100"
+                        style={{ color: 'var(--text-muted)' }}
+                        title="Copy text"
+                      >
+                        {copiedMsgId === msg.id ? <IconCheck size={14} style={{ color: 'var(--accent)' }} /> : <IconCopy size={14} />}
+                      </button>
                     </div>
                   </div>
                 );
               }
               if (msg.type === 'file') {
                 return (
-                  <div key={msg.id} className="card-enter glass-card glow-card p-3 sm:p-4" style={{ animationDelay: `${Math.min(idx * 20, 200)}ms` }}>
-                    <div className="flex items-center gap-2.5">
-                      <div className="w-10 h-10 rounded-xl flex flex-col items-center justify-center flex-shrink-0" style={{ background: msg.isMe ? 'var(--accent-dim)' : 'rgba(59,130,246,0.1)', border: `1px solid ${msg.isMe ? 'var(--border-accent)' : 'rgba(59,130,246,0.2)'}` }}>
-                        <IconFile style={{ color: msg.isMe ? 'var(--accent)' : '#3b82f6' }} />
-                        <span className="text-[7px] font-bold mt-0.5" style={{ color: msg.isMe ? 'var(--accent)' : '#3b82f6' }}>{ext(msg.fileName)}</span>
+                  <div key={msg.id} className="card-enter message-bubble p-4 sm:p-5" style={{ animationDelay: `${Math.min(idx * 20, 200)}ms` }}>
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 rounded-xl flex flex-col items-center justify-center flex-shrink-0" style={{ background: msg.isMe ? 'var(--accent)' : 'var(--bg-card)', border: msg.isMe ? 'none' : '1px solid var(--border-subtle)' }}>
+                        <IconFile style={{ color: msg.isMe ? 'var(--bg-primary)' : 'var(--text-secondary)' }} />
+                        <span className="text-[7px] font-black mt-0.5" style={{ color: msg.isMe ? 'var(--bg-primary)' : 'var(--text-secondary)' }}>{ext(msg.fileName)}</span>
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-[13px] font-semibold truncate" style={{ color: 'var(--text-primary)' }} title={msg.fileName}>{msg.fileName}</p>
-                        <p className="text-[10px] mt-0.5" style={{ color: 'var(--text-muted)' }}>{fmt(msg.fileSize)}</p>
+                        <p className="text-sm font-bold truncate" style={{ color: 'var(--text-primary)' }} title={msg.fileName}>{msg.fileName}</p>
+                        <p className="text-[10px] mt-0.5 font-semibold" style={{ color: 'var(--text-muted)' }}>{fmt(msg.fileSize)}</p>
                       </div>
-                      <a href={msg.url} download={msg.fileName} className="p-2 rounded-xl flex-shrink-0 transition-colors" style={{ background: 'var(--accent-dim)', border: '1px solid var(--border-accent)', color: 'var(--accent)' }}>
-                        <IconDownload />
-                      </a>
+                      {msg.url && (
+                        <a href={msg.url} download={msg.fileName} className="btn p-3 rounded-xl flex-shrink-0 transition-all" style={{ background: 'var(--accent)', color: 'var(--bg-primary)' }}>
+                          <IconDownload />
+                        </a>
+                      )}
                     </div>
-                    <div className="flex items-center gap-1.5 mt-2.5 pt-2.5" style={{ borderTop: '1px solid var(--border-subtle)' }}>
-                      <span className="text-[10px] font-medium" style={{ color: 'var(--text-muted)' }}>{msg.isMe ? 'You' : msg.sender || 'Remote'}</span>
-                      <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>·</span>
+                    <div className="flex items-center gap-2 mt-3 pt-3" style={{ borderTop: '1px solid var(--border-subtle)' }}>
+                      <span className="text-[10px] font-bold" style={{ color: 'var(--text-muted)' }}>{msg.isMe ? 'You' : msg.sender || 'Remote'}</span>
                       <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>{fmtTime(msg.time)}</span>
+                      {msg.persisted && <IconClock size={10} style={{ color: 'var(--text-muted)' }} />}
                     </div>
                   </div>
                 );
@@ -579,14 +1072,14 @@ export default function App() {
             })}
 
             {Object.entries(downloadProgress).map(([fileId, pct]) => (
-              <div key={`dl-${fileId}`} className="card-enter glass-card p-3 sm:p-4">
-                <div className="flex items-center gap-2.5 mb-2">
+              <div key={`dl-${fileId}`} className="card-enter message-bubble p-4 sm:p-5">
+                <div className="flex items-center gap-3 mb-3">
                   <IconLoader size={14} style={{ color: 'var(--accent)' }} />
-                  <span className="text-[11px] font-semibold" style={{ color: 'var(--text-secondary)' }}>Receiving…</span>
-                  <span className="ml-auto text-[11px] font-bold code-display" style={{ color: 'var(--accent)' }}>{pct}%</span>
+                  <span className="text-xs font-bold" style={{ color: 'var(--text-secondary)' }}>Receiving file...</span>
+                  <span className="ml-auto text-xs font-black code-display" style={{ color: 'var(--accent)' }}>{pct}%</span>
                 </div>
-                <div className="w-full rounded-full h-1" style={{ background: 'var(--bg-card)' }}>
-                  <div className="progress-bar h-1" style={{ width: `${pct}%` }} />
+                <div className="w-full rounded-full h-1.5" style={{ background: 'var(--bg-card)' }}>
+                  <div className="progress-bar h-1.5" style={{ width: `${pct}%` }} />
                 </div>
               </div>
             ))}
@@ -595,46 +1088,66 @@ export default function App() {
         )}
       </main>
 
-      {/* ━━━ INPUT ━━━ */}
-      <footer className="flex-shrink-0 px-3 sm:px-5 py-2.5 safe-bottom" style={{ borderTop: '1px solid var(--border-subtle)', background: 'var(--bg-secondary)' }}>
+      {/* INPUT */}
+      <footer className="flex-shrink-0 px-4 sm:px-6 py-3 safe-bottom" style={{ borderTop: '2px solid var(--border-subtle)', background: 'var(--bg-secondary)' }}>
+        {/* Status indicators */}
+        <div className="max-w-3xl mx-auto flex items-center gap-2 mb-2 flex-wrap">
+          {isEncrypted && (
+            <span className="encrypt-badge flex items-center gap-1 px-2 py-1 rounded-lg text-[9px] font-bold uppercase tracking-wider" style={{ background: 'var(--accent-dim)', border: '1px solid var(--border-accent)', color: 'var(--accent)' }}>
+              <IconShield size={10} /> Encrypted
+            </span>
+          )}
+          {holdDuration > 0 && (
+            <span className="flex items-center gap-1 px-2 py-1 rounded-lg text-[9px] font-bold uppercase tracking-wider" style={{ background: 'var(--accent-dim)', border: '1px solid var(--border-accent)', color: 'var(--accent)' }}>
+              <IconClock size={10} /> Held {holdDuration}h
+            </span>
+          )}
+        </div>
+
         {isSending && uploadProgress > 0 && (
           <div className="max-w-3xl mx-auto mb-2">
             <div className="flex justify-between items-center mb-1">
-              <span className="text-[10px] font-medium uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Sending…</span>
-              <span className="text-[10px] font-bold code-display" style={{ color: 'var(--accent)' }}>{uploadProgress}%</span>
+              <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Sending...</span>
+              <span className="text-[10px] font-black code-display" style={{ color: 'var(--accent)' }}>{uploadProgress}%</span>
             </div>
-            <div className="w-full rounded-full h-1" style={{ background: 'var(--bg-card)' }}><div className="progress-bar h-1" style={{ width: `${uploadProgress}%` }} /></div>
+            <div className="w-full rounded-full h-1.5" style={{ background: 'var(--bg-card)' }}><div className="progress-bar h-1.5" style={{ width: `${uploadProgress}%` }} /></div>
           </div>
         )}
-        <form onSubmit={handleSendText} className="max-w-3xl mx-auto flex items-center gap-1.5 p-1 rounded-xl" style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)' }}>
-          <label className={`p-2 rounded-lg cursor-pointer flex-shrink-0 ${!isConnected || isSending ? 'opacity-30 pointer-events-none' : ''}`} style={{ color: 'var(--text-muted)' }}>
+        <form onSubmit={handleSendText} className="max-w-3xl mx-auto flex items-center gap-2 p-1.5 rounded-2xl" style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)' }}>
+          <label className={`btn p-3 rounded-xl cursor-pointer flex-shrink-0 ${!isConnected || isSending ? 'opacity-30 pointer-events-none' : ''}`} style={{ color: 'var(--text-muted)' }}>
             <input type="file" className="hidden" onChange={handleFileUpload} disabled={!isConnected || isSending} />
             <IconClip size={18} />
           </label>
           <input
             type="text" value={inputText}
             onChange={e => setInputText(e.target.value)}
-            placeholder={isConnected ? "Drop into the void…" : "Waiting for peers…"}
+            placeholder={isConnected ? "Drop into the void..." : "Waiting for peers..."}
             disabled={!isConnected}
-            className="flex-1 bg-transparent border-none text-[13px] py-2 px-1 focus:outline-none disabled:opacity-40 min-w-0"
+            className="flex-1 bg-transparent border-none text-sm py-3 px-2 focus:outline-none disabled:opacity-40 min-w-0 font-medium"
             style={{ color: 'var(--text-primary)' }}
           />
-          <button type="submit" disabled={!inputText.trim() || !isConnected} className="p-2 rounded-lg flex-shrink-0 disabled:opacity-20 transition-colors" style={{ background: inputText.trim() && isConnected ? 'var(--accent)' : 'var(--bg-card)', color: inputText.trim() && isConnected ? '#fff' : 'var(--text-muted)' }}>
+          <button type="submit" disabled={!inputText.trim() || !isConnected} className="btn p-3 rounded-xl flex-shrink-0 disabled:opacity-20 transition-all" style={{ background: inputText.trim() && isConnected ? 'var(--accent)' : 'var(--bg-card)', color: inputText.trim() && isConnected ? 'var(--bg-primary)' : 'var(--text-muted)' }}>
             {isSending ? <IconLoader size={18} /> : <IconSend size={18} />}
           </button>
         </form>
         {!isConnected && (
-          <p className="max-w-3xl mx-auto text-center mt-1.5">
-            <span className="text-[10px] font-medium" style={{ color: 'var(--text-muted)' }}>
+          <p className="max-w-3xl mx-auto text-center mt-2">
+            <span className="text-[10px] font-bold" style={{ color: 'var(--text-muted)' }}>
               Share code <strong className="code-display" style={{ color: 'var(--accent)' }}>{currentRoom}</strong> or scan QR to connect
             </span>
           </p>
         )}
+        {/* Credit */}
+        <p className="text-center mt-2">
+          <span className="text-[9px] font-semibold uppercase tracking-widest" style={{ color: 'var(--text-muted)', opacity: 0.5 }}>by alchemist4real</span>
+        </p>
       </footer>
 
-      {/* ━━━ MODALS ━━━ */}
+      {/* MODALS */}
       {showQR && <QRDisplayModal roomCode={currentRoom} onClose={() => setShowQR(false)} />}
       {showScanner && <QRScannerModal onScan={handleQRScan} onClose={() => setShowScanner(false)} />}
+      {showEncryptionModal && <EncryptionModal onSubmit={handleEnableEncryption} onClose={() => setShowEncryptionModal(false)} isJoining={false} />}
+      {showHoldModal && <HoldRoomModal onSubmit={handleHoldRoom} onClose={() => setShowHoldModal(false)} />}
     </div>
   );
 }
