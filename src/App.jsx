@@ -87,6 +87,8 @@ const IconUsers = (p) => <Icon {...p} size={14} d={<><path d="M16 21v-2a4 4 0 0 
 const IconLoader = (p) => <Icon {...p} className="animate-spin" d={<path d="M21 12a9 9 0 1 1-6.219-8.56"/>} />;
 const IconX = (p) => <Icon {...p} size={16} d={<><path d="M18 6 6 18"/><path d="m6 6 12 12"/></>} />;
 const IconText = (p) => <Icon {...p} size={14} d={<><path d="M17 6.1H3"/><path d="M21 12.1H3"/><path d="M15.1 18H3"/></>} />;
+const IconTrash = (p) => <Icon {...p} size={14} d={<><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></>} />;
+const IconTrash2 = (p) => <Icon {...p} size={16} d={<><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></>} />;
 const IconArrowRight = (p) => <Icon {...p} size={13} d={<><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></>} />;
 const IconQR = (p) => <Icon {...p} size={16} d={<><rect x="2" y="2" width="8" height="8" rx="1"/><rect x="14" y="2" width="8" height="8" rx="1"/><rect x="2" y="14" width="8" height="8" rx="1"/><path d="M14 14h2v2h-2z"/><path d="M20 14h2v2h-2z"/><path d="M14 20h2v2h-2z"/><path d="M20 20h2v2h-2z"/><path d="M17 17h2v2h-2z"/></>} />;
 const IconCamera = (p) => <Icon {...p} size={16} d={<><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></>} />;
@@ -243,6 +245,82 @@ function EncryptionModal({ onSubmit, onClose, isJoining }) {
         >
           {isJoining ? 'Decrypt Room' : 'Enable Encryption'}
         </button>
+      </div>
+    </div>
+  );
+}
+
+// ─── Password Gate Modal (shown on room entry) ─────────────
+function PasswordGateModal({ onSubmit, onCancel }) {
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+
+  const handleSubmit = () => {
+    if (password.trim()) {
+      setError('');
+      onSubmit(password.trim());
+    }
+  };
+
+  return (
+    <div className="modal-overlay">
+      <div className="modal-content p-6" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-sm font-black uppercase tracking-wider" style={{ color: 'var(--text-primary)' }}>
+            Room Locked
+          </h3>
+        </div>
+        <p className="text-xs mb-4 leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
+          This room is encrypted. Enter the passphrase to access.
+        </p>
+        {error && <p className="text-xs mb-3 font-bold" style={{ color: '#ef4444' }}>{error}</p>}
+        <input
+          type="password" value={password}
+          onChange={e => setPassword(e.target.value)}
+          onKeyDown={e => e.key === 'Enter' && handleSubmit()}
+          placeholder="Enter room passphrase..."
+          autoFocus
+          className="w-full px-4 py-3 rounded-xl text-sm font-semibold input-ring mb-4"
+          style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', color: 'var(--text-primary)' }}
+        />
+        <div className="flex gap-3">
+          <button
+            onClick={onCancel}
+            className="btn flex-1 py-3 rounded-xl text-sm font-bold transition-all"
+            style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', color: 'var(--text-secondary)' }}
+          >
+            Back
+          </button>
+          <button
+            onClick={handleSubmit}
+            disabled={!password.trim()}
+            className="btn flex-1 py-3 rounded-xl text-sm font-black uppercase tracking-wider transition-all disabled:opacity-30"
+            style={{ background: 'var(--accent)', color: 'var(--bg-primary)' }}
+          >
+            Unlock
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Confirm Modal ──────────────────────────────────────────
+function ConfirmModal({ title, message, onConfirm, onClose, confirmLabel = 'Confirm', danger = false }) {
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-content p-6" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-sm font-black uppercase tracking-wider" style={{ color: 'var(--text-primary)' }}>{title}</h3>
+          <button onClick={onClose} className="btn p-2 rounded-xl" style={{ color: 'var(--text-muted)', background: 'var(--bg-card)' }}>
+            <IconX />
+          </button>
+        </div>
+        <p className="text-xs mb-5 leading-relaxed" style={{ color: 'var(--text-secondary)' }}>{message}</p>
+        <div className="flex gap-3">
+          <button onClick={onClose} className="btn flex-1 py-3 rounded-xl text-sm font-bold transition-all" style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', color: 'var(--text-secondary)' }}>Cancel</button>
+          <button onClick={onConfirm} className="btn flex-1 py-3 rounded-xl text-sm font-black uppercase tracking-wider transition-all" style={{ background: danger ? '#ef4444' : 'var(--accent)', color: '#fff' }}>{confirmLabel}</button>
+        </div>
       </div>
     </div>
   );
@@ -425,15 +503,24 @@ export default function App() {
   const [showQR, setShowQR] = useState(false);
   const [showScanner, setShowScanner] = useState(false);
 
+  // Host/owner tracking
+  const [isHost, setIsHost] = useState(false);
+
   // Encryption state
   const [isEncrypted, setIsEncrypted] = useState(false);
   const [encryptionPassword, setEncryptionPassword] = useState('');
   const [showEncryptionModal, setShowEncryptionModal] = useState(false);
+  const [showPasswordGate, setShowPasswordGate] = useState(false);
+  const [pendingRoomCode, setPendingRoomCode] = useState('');
 
   // Hold room state
   const [holdDuration, setHoldDuration] = useState(0); // hours, 0 = no hold
   const [showHoldModal, setShowHoldModal] = useState(false);
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
+
+  // Delete / Empty room state
+  const [showConfirmEmpty, setShowConfirmEmpty] = useState(false);
+  const [deletingMsgId, setDeletingMsgId] = useState(null);
 
   const channelRef = useRef(null);
   const lobbyRef = useRef(null);
@@ -443,11 +530,13 @@ export default function App() {
   const myCodeRef = useRef('');
   const hasAutoJoined = useRef(false);
   const encryptRef = useRef({ enabled: false, password: '' });
+  const isHostRef = useRef(false);
 
-  // Keep encryptRef in sync
+  // Keep refs in sync
   useEffect(() => {
     encryptRef.current = { enabled: isEncrypted, password: encryptionPassword };
   }, [isEncrypted, encryptionPassword]);
+  useEffect(() => { isHostRef.current = isHost; }, [isHost]);
 
   // ─── Check URL for ?room= param ──────────────────────────
   const getUrlRoomCode = useCallback(() => {
@@ -487,9 +576,21 @@ export default function App() {
     setMyCode(code);
     myCodeRef.current = code;
     if (urlRoom) {
-      setCurrentRoom(urlRoom);
-      hasAutoJoined.current = true;
-      setCurrentView('room');
+      // Check if room is encrypted before entering
+      (async () => {
+        const { data } = await supabase.from('rooms').select('*').eq('code', urlRoom).single();
+        if (data?.is_encrypted) {
+          setPendingRoomCode(urlRoom);
+          setShowPasswordGate(true);
+          hasAutoJoined.current = true;
+        } else {
+          setCurrentRoom(urlRoom);
+          hasAutoJoined.current = true;
+          if (data?.owner === code) setIsHost(true);
+          if (data?.hold_hours) setHoldDuration(data.hold_hours);
+          setCurrentView('room');
+        }
+      })();
     }
   }, [getUrlRoomCode]);
 
@@ -645,16 +746,20 @@ export default function App() {
   }, [currentRoom, currentView, setupChannel]);
 
   // ─── Create Room ──────────────────────────────────────────
-  const createRoom = useCallback(() => {
+  const createRoom = useCallback(async () => {
     const code = myCode || genCode();
     setMessages([]);
     setCurrentRoom(code);
+    setIsHost(true);
+    isHostRef.current = true;
     window.history.replaceState({}, '', `${window.location.pathname}?room=${code}`);
+    // Register room in Supabase
+    await supabase.from('rooms').upsert({ code, owner: myCodeRef.current }, { onConflict: 'code' });
     setCurrentView('room');
   }, [myCode]);
 
   // ─── Join Room ────────────────────────────────────────────
-  const joinRoom = useCallback((codeOverride) => {
+  const joinRoom = useCallback(async (codeOverride) => {
     const code = (codeOverride || '').trim().toUpperCase();
     if (!code) return;
     setMessages([]);
@@ -662,12 +767,48 @@ export default function App() {
       lobbyRef.current?.send({ type: 'broadcast', event: 'room_close', payload: { code: currentRoom } });
       setIsPublic(false);
     }
+
+    // Check if room is encrypted
+    const { data } = await supabase.from('rooms').select('*').eq('code', code).single();
+    if (data?.is_encrypted) {
+      setPendingRoomCode(code);
+      if (data?.owner === myCodeRef.current) setIsHost(true);
+      if (data?.hold_hours) setHoldDuration(data.hold_hours);
+      setShowPasswordGate(true);
+      setShowPublicRooms(false);
+      setShowScanner(false);
+      return;
+    }
+
+    if (data?.owner === myCodeRef.current) setIsHost(true);
+    else setIsHost(false);
+    if (data?.hold_hours) setHoldDuration(data.hold_hours);
+
     window.history.replaceState({}, '', `${window.location.pathname}?room=${code}`);
     setCurrentRoom(code);
     setCurrentView('room');
     setShowPublicRooms(false);
     setShowScanner(false);
   }, [isPublic, currentRoom]);
+
+  // ─── Password gate handler ────────────────────────────────
+  const handlePasswordGateSubmit = useCallback((password) => {
+    setEncryptionPassword(password);
+    setIsEncrypted(true);
+    setShowPasswordGate(false);
+    const code = pendingRoomCode;
+    setPendingRoomCode('');
+    window.history.replaceState({}, '', `${window.location.pathname}?room=${code}`);
+    setCurrentRoom(code);
+    setCurrentView('room');
+  }, [pendingRoomCode]);
+
+  const handlePasswordGateCancel = useCallback(() => {
+    setShowPasswordGate(false);
+    setPendingRoomCode('');
+    setCurrentView('landing');
+    window.history.replaceState({}, '', window.location.pathname);
+  }, []);
 
   // ─── Back to landing ──────────────────────────────────────
   const goToLanding = useCallback(() => {
@@ -681,6 +822,8 @@ export default function App() {
     setIsEncrypted(false);
     setEncryptionPassword('');
     setHoldDuration(0);
+    setIsHost(false);
+    isHostRef.current = false;
     window.history.replaceState({}, '', window.location.pathname);
   }, [isPublic, currentRoom]);
 
@@ -705,30 +848,54 @@ export default function App() {
     }
   }, [isPublic, currentRoom]);
 
-  // ─── Toggle encryption ────────────────────────────────────
-  const handleEnableEncryption = useCallback((password) => {
+  // ─── Toggle encryption (host only) ────────────────────────
+  const handleEnableEncryption = useCallback(async (password) => {
     setEncryptionPassword(password);
     setIsEncrypted(true);
     setShowEncryptionModal(false);
     setMessages(prev => [...prev, { id: `sys-enc-${Date.now()}`, type: 'system', text: 'Encryption enabled for this room', time: new Date() }]);
-  }, []);
+    // Persist encryption state to Supabase
+    await supabase.from('rooms').upsert({ code: currentRoom, owner: myCodeRef.current, is_encrypted: true }, { onConflict: 'code' });
+  }, [currentRoom]);
 
-  const toggleEncryption = useCallback(() => {
+  const toggleEncryption = useCallback(async () => {
+    if (!isHost) return; // Only host can toggle
     if (isEncrypted) {
       setIsEncrypted(false);
       setEncryptionPassword('');
       setMessages(prev => [...prev, { id: `sys-enc-${Date.now()}`, type: 'system', text: 'Encryption disabled', time: new Date() }]);
+      await supabase.from('rooms').update({ is_encrypted: false, encryption_hash: null }).eq('code', currentRoom);
     } else {
       setShowEncryptionModal(true);
     }
-  }, [isEncrypted]);
+  }, [isEncrypted, isHost, currentRoom]);
 
   // ─── Hold room ────────────────────────────────────────────
-  const handleHoldRoom = useCallback((hours) => {
+  const handleHoldRoom = useCallback(async (hours) => {
     setHoldDuration(hours);
     setShowHoldModal(false);
     setMessages(prev => [...prev, { id: `sys-hold-${Date.now()}`, type: 'system', text: `Room held for ${hours} hours`, time: new Date() }]);
-  }, []);
+    await supabase.from('rooms').upsert({ code: currentRoom, owner: myCodeRef.current, hold_hours: hours }, { onConflict: 'code' });
+  }, [currentRoom]);
+
+  // ─── Delete single message (host only) ────────────────────
+  const deleteMessage = useCallback(async (msgId) => {
+    if (!isHost) return;
+    setMessages(prev => prev.filter(m => m.id !== msgId));
+    // Also delete from Supabase if persisted
+    await supabase.from('room_messages').delete().eq('id', msgId);
+    setDeletingMsgId(null);
+  }, [isHost]);
+
+  // ─── Empty room (host only) ───────────────────────────────
+  const emptyRoom = useCallback(async () => {
+    if (!isHost) return;
+    setMessages([]);
+    setShowConfirmEmpty(false);
+    // Delete all messages from Supabase for this room
+    await supabase.from('room_messages').delete().eq('room_code', currentRoom);
+    setMessages([{ id: `sys-empty-${Date.now()}`, type: 'system', text: 'Room cleared by owner', time: new Date() }]);
+  }, [isHost, currentRoom]);
 
   // Auto-scroll
   useEffect(() => { scrollRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages, downloadProgress]);
@@ -784,12 +951,15 @@ export default function App() {
     finally { setIsSending(false); setUploadProgress(0); e.target.value = null; }
   }, [holdDuration, currentRoom, persistMessage]);
 
-  // ─── Download all files ───────────────────────────────────
+  // ─── Download all files + texts ────────────────────────────
   const downloadAllFiles = useCallback(async () => {
     const fileMessages = messages.filter(m => m.type === 'file' && m.url);
-    if (fileMessages.length === 0) return;
+    const textMessages = messages.filter(m => m.type === 'text');
 
-    if (fileMessages.length === 1) {
+    if (fileMessages.length === 0 && textMessages.length === 0) return;
+
+    // Single file, no text → direct download
+    if (fileMessages.length === 1 && textMessages.length === 0) {
       const a = document.createElement('a');
       a.href = fileMessages[0].url;
       a.download = fileMessages[0].fileName;
@@ -801,6 +971,8 @@ export default function App() {
     try {
       const JSZip = (await import('jszip')).default;
       const zip = new JSZip();
+
+      // Add files
       for (const fm of fileMessages) {
         try {
           const resp = await fetch(fm.url);
@@ -808,11 +980,23 @@ export default function App() {
           zip.file(fm.fileName, blob);
         } catch (e) { console.error('Failed to add file to zip:', fm.fileName, e); }
       }
+
+      // Add text messages + links as a .txt file
+      if (textMessages.length > 0) {
+        const lines = textMessages.map(m => {
+          const time = m.time instanceof Date ? m.time.toLocaleString() : '';
+          const sender = m.isMe ? 'You' : (m.sender || 'Remote');
+          return `[${time}] ${sender}: ${m.text}`;
+        });
+        const header = `BEENHOLLOW Room: ${currentRoom}\nExported: ${new Date().toLocaleString()}\n${'─'.repeat(40)}\n\n`;
+        zip.file(`messages_${currentRoom}.txt`, header + lines.join('\n'));
+      }
+
       const content = await zip.generateAsync({ type: 'blob' });
       const url = URL.createObjectURL(content);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `beenhollow_${currentRoom}_files.zip`;
+      a.download = `beenhollow_${currentRoom}_all.zip`;
       a.click();
       URL.revokeObjectURL(url);
     } catch (err) { console.error('Download all error:', err); }
@@ -837,17 +1021,21 @@ export default function App() {
   const ext = (n) => { const e = n.split('.').pop()?.toUpperCase() || '?'; return e.length > 5 ? e.slice(0, 4) : e; };
 
   const fileCount = useMemo(() => messages.filter(m => m.type === 'file' && m.url).length, [messages]);
+  const contentCount = useMemo(() => messages.filter(m => m.type === 'file' || m.type === 'text').length, [messages]);
 
   // ─── LANDING VIEW ─────────────────────────────────────────
   if (currentView === 'landing') {
     return (
-      <LandingPage
-        onCreateRoom={createRoom}
-        onJoinRoom={joinRoom}
-        publicRooms={publicRooms}
-        onJoinPublic={joinRoom}
-        onScanQR={handleQRScan}
-      />
+      <>
+        <LandingPage
+          onCreateRoom={createRoom}
+          onJoinRoom={joinRoom}
+          publicRooms={publicRooms}
+          onJoinPublic={joinRoom}
+          onScanQR={handleQRScan}
+        />
+        {showPasswordGate && <PasswordGateModal onSubmit={handlePasswordGateSubmit} onCancel={handlePasswordGateCancel} />}
+      </>
     );
   }
 
@@ -908,7 +1096,7 @@ export default function App() {
         </button>
 
         {/* Encryption toggle */}
-        <button onClick={toggleEncryption} className="btn flex items-center gap-1.5 px-3 py-2.5 rounded-xl text-[11px] font-bold flex-shrink-0 transition-all" style={{ background: isEncrypted ? 'var(--accent-dim)' : 'var(--bg-card)', border: `1px solid ${isEncrypted ? 'var(--border-accent)' : 'var(--border-subtle)'}`, color: isEncrypted ? 'var(--accent)' : 'var(--text-muted)' }} title={isEncrypted ? 'Encrypted' : 'Not encrypted'}>
+        <button onClick={toggleEncryption} className={`btn flex items-center gap-1.5 px-3 py-2.5 rounded-xl text-[11px] font-bold flex-shrink-0 transition-all ${!isHost && !isEncrypted ? 'opacity-30 cursor-not-allowed' : ''}`} style={{ background: isEncrypted ? 'var(--accent-dim)' : 'var(--bg-card)', border: `1px solid ${isEncrypted ? 'var(--border-accent)' : 'var(--border-subtle)'}`, color: isEncrypted ? 'var(--accent)' : 'var(--text-muted)' }} title={isEncrypted ? 'Encrypted' : isHost ? 'Encrypt' : 'Only owner can encrypt'}>
           {isEncrypted ? <IconShield /> : <IconUnlock />}
           <span className="hidden sm:inline">{isEncrypted ? 'Encrypted' : 'Encrypt'}</span>
         </button>
@@ -920,10 +1108,18 @@ export default function App() {
         </button>
 
         {/* Download all */}
-        {fileCount > 0 && (
-          <button onClick={downloadAllFiles} className="btn flex items-center gap-1.5 px-3 py-2.5 rounded-xl text-[11px] font-bold flex-shrink-0 transition-all" style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', color: 'var(--text-secondary)' }} title="Download All Files">
+        {contentCount > 0 && (
+          <button onClick={downloadAllFiles} className="btn flex items-center gap-1.5 px-3 py-2.5 rounded-xl text-[11px] font-bold flex-shrink-0 transition-all" style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', color: 'var(--text-secondary)' }} title="Download All">
             <IconArchive />
-            <span className="hidden sm:inline">All ({fileCount})</span>
+            <span className="hidden sm:inline">All ({contentCount})</span>
+          </button>
+        )}
+
+        {/* Empty room (host only) */}
+        {isHost && messages.length > 0 && (
+          <button onClick={() => setShowConfirmEmpty(true)} className="btn flex items-center gap-1.5 px-3 py-2.5 rounded-xl text-[11px] font-bold flex-shrink-0 transition-all" style={{ background: 'var(--bg-card)', border: '1px solid #ef4444', color: '#ef4444' }} title="Empty Room">
+            <IconTrash2 />
+            <span className="hidden sm:inline">Empty</span>
           </button>
         )}
 
@@ -1038,6 +1234,16 @@ export default function App() {
                       >
                         {copiedMsgId === msg.id ? <IconCheck size={14} style={{ color: 'var(--accent)' }} /> : <IconCopy size={14} />}
                       </button>
+                      {isHost && (
+                        <button
+                          onClick={() => setDeletingMsgId(msg.id)}
+                          className="btn p-2 rounded-lg flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity sm:opacity-100"
+                          style={{ color: '#ef4444' }}
+                          title="Delete message"
+                        >
+                          <IconTrash size={14} />
+                        </button>
+                      )}
                     </div>
                   </div>
                 );
@@ -1058,6 +1264,16 @@ export default function App() {
                         <a href={msg.url} download={msg.fileName} className="btn p-3 rounded-xl flex-shrink-0 transition-all" style={{ background: 'var(--accent)', color: 'var(--bg-primary)' }}>
                           <IconDownload />
                         </a>
+                      )}
+                      {isHost && (
+                        <button
+                          onClick={() => setDeletingMsgId(msg.id)}
+                          className="btn p-3 rounded-xl flex-shrink-0 transition-all"
+                          style={{ background: 'var(--bg-card)', border: '1px solid #ef4444', color: '#ef4444' }}
+                          title="Delete file"
+                        >
+                          <IconTrash />
+                        </button>
                       )}
                     </div>
                     <div className="flex items-center gap-2 mt-3 pt-3" style={{ borderTop: '1px solid var(--border-subtle)' }}>
@@ -1148,6 +1364,9 @@ export default function App() {
       {showScanner && <QRScannerModal onScan={handleQRScan} onClose={() => setShowScanner(false)} />}
       {showEncryptionModal && <EncryptionModal onSubmit={handleEnableEncryption} onClose={() => setShowEncryptionModal(false)} isJoining={false} />}
       {showHoldModal && <HoldRoomModal onSubmit={handleHoldRoom} onClose={() => setShowHoldModal(false)} />}
+      {showPasswordGate && <PasswordGateModal onSubmit={handlePasswordGateSubmit} onCancel={handlePasswordGateCancel} />}
+      {showConfirmEmpty && <ConfirmModal title="Empty Room" message="This will permanently delete all messages and files in this room. This action cannot be undone." confirmLabel="Empty Room" danger onConfirm={emptyRoom} onClose={() => setShowConfirmEmpty(false)} />}
+      {deletingMsgId && <ConfirmModal title="Delete Message" message="Are you sure you want to delete this message?" confirmLabel="Delete" danger onConfirm={() => deleteMessage(deletingMsgId)} onClose={() => setDeletingMsgId(null)} />}
     </div>
   );
 }
