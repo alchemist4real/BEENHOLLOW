@@ -2,9 +2,9 @@ import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { createClient } from '@supabase/supabase-js';
 import QRCode from 'qrcode';
 
-// ─── Supabase ───────────────────────────────────────────────
-const supabaseUrl = 'https://kklvtfuvxudckuxkoysc.supabase.co';
-const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtrbHZ0ZnV2eHVkY2t1eGtveXNjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ0Mjc1NzEsImV4cCI6MjA5MDAwMzU3MX0.SsBoGWSP81U6A_VR4XwsA8WafXjfO_opxeUHKFPtYvM';
+// ─── Supabase (Numpang Sartono Instance) ────────────────────
+const supabaseUrl = import.meta.env?.VITE_SUPABASE_URL || 'https://hsxlklsoflonvcudrhsn.supabase.co';
+const supabaseKey = import.meta.env?.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhzeGxrbHNvZmxvbnZjdWRyaHNuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI3MTk3OTEsImV4cCI6MjA5ODI5NTc5MX0.XZ7D4HiRQoG0EAtkJW278N3l1O4LuCCDuUtnRYWjjUQ';
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 function genCode(len = 5) {
