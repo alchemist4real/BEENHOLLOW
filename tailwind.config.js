@@ -7,11 +7,11 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        brand: ['Bitcount', 'Bitcount Prop', 'Bitcount Grid', 'sans-serif'],
-        display: ['Bitcount', 'Bitcount Prop', 'Bitcount Grid', 'sans-serif'],
-        'brand-grid': ['"Bitcount Grid"', 'Bitcount', 'monospace'],
-        sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
-        mono: ['"Bitcount Grid"', '"JetBrains Mono"', 'monospace'],
+        brand: ['"Bitcount Prop Double"', '"Bitcount"', 'sans-serif'],
+        display: ['"Bitcount Prop Double"', '"Bitcount"', 'sans-serif'],
+        sans: ['"Bitcount Grid Single"', '"Bitcount Grid"', 'monospace'],
+        secondary: ['"Bitcount Grid Single"', '"Bitcount Grid"', 'monospace'],
+        mono: ['"Bitcount Grid Single"', '"Bitcount Grid"', 'monospace'],
       },
     },
   },

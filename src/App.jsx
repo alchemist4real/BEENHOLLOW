@@ -153,7 +153,7 @@ function QRScannerModal({ onScan, onClose }) {
         </div>
         <div id="qr-reader-container" style={{ borderRadius: '12px', overflow: 'hidden' }} />
         <p className="text-[10px] text-center mt-3 font-medium" style={{ color: 'var(--text-muted)' }}>
-          Point camera at a BEENHOLLOW QR code
+          Point camera at a beenhollow QR code
         </p>
       </div>
     </div>
@@ -389,8 +389,8 @@ function LandingPage({ onCreateRoom, onJoinRoom, publicRooms, onJoinPublic, onSc
           <div className="mb-6 flex justify-center" style={{ color: 'var(--accent)' }}>
             <Logo size={56} />
           </div>
-          <h1 className="text-4xl sm:text-5xl font-black font-brand tracking-wider mb-3" style={{ color: 'var(--text-primary)' }}>
-            BEENHOLLOW
+          <h1 className="text-4xl sm:text-5xl font-black font-brand tracking-wider mb-3 lowercase" style={{ color: 'var(--text-primary)' }}>
+            beenhollow
           </h1>
           <p className="text-sm font-medium" style={{ color: 'var(--text-muted)' }}>
             Drop files into the void.
@@ -1053,7 +1053,7 @@ export default function App() {
             <div className="flex-shrink-0" style={{ color: 'var(--text-primary)' }}>
               <Logo size={24} />
             </div>
-            <h1 className="text-sm font-black font-brand tracking-wider truncate uppercase" style={{ color: 'var(--text-primary)' }}>BEENHOLLOW</h1>
+            <h1 className="text-sm font-black font-brand tracking-wider truncate lowercase" style={{ color: 'var(--text-primary)' }}>beenhollow</h1>
           </div>
         </div>
         <div className="flex items-center gap-2 flex-shrink-0">
