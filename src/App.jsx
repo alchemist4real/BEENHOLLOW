@@ -146,13 +146,13 @@ function QRScannerModal({ onScan, onClose }) {
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-content p-5" onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-sm font-black uppercase tracking-wider" style={{ color: 'var(--text-primary)' }}>Scan QR Code</h3>
+          <h3 className="text-sm font-normal uppercase tracking-wider" style={{ color: 'var(--text-primary)' }}>Scan QR Code</h3>
           <button onClick={onClose} className="btn p-2 rounded-xl" style={{ color: 'var(--text-muted)', background: 'var(--bg-card)' }}>
             <IconX />
           </button>
         </div>
         <div id="qr-reader-container" style={{ borderRadius: '12px', overflow: 'hidden' }} />
-        <p className="text-[10px] text-center mt-3 font-medium" style={{ color: 'var(--text-muted)' }}>
+        <p className="text-[10px] text-center mt-3 font-normal" style={{ color: 'var(--text-muted)' }}>
           Point camera at a beenhollow QR code
         </p>
       </div>
@@ -168,7 +168,7 @@ function QRDisplayModal({ roomCode, onClose }) {
   useEffect(() => {
     QRCode.toDataURL(roomUrl, {
       width: 280, margin: 2,
-      color: { dark: '#000000', light: '#f4ff1e' },
+      color: { dark: '#1f6aec', light: '#f4ff1e' },
       errorCorrectionLevel: 'M'
     }).then(setQrDataUrl).catch(console.error);
   }, [roomUrl]);
@@ -179,7 +179,7 @@ function QRDisplayModal({ roomCode, onClose }) {
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-content p-6" onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-5">
-          <h3 className="text-sm font-black uppercase tracking-wider" style={{ color: 'var(--text-primary)' }}>Share Room</h3>
+          <h3 className="text-sm font-normal uppercase tracking-wider" style={{ color: 'var(--text-primary)' }}>Share Room</h3>
           <button onClick={onClose} className="btn p-2 rounded-xl" style={{ color: 'var(--text-muted)', background: 'var(--bg-card)' }}>
             <IconX />
           </button>
@@ -195,13 +195,13 @@ function QRDisplayModal({ roomCode, onClose }) {
             </div>
           )}
           <div className="text-center">
-            <p className="text-[10px] uppercase font-black mb-1 tracking-wider" style={{ color: 'var(--text-muted)' }}>Room Code</p>
+            <p className="text-[10px] uppercase font-normal mb-1 tracking-wider" style={{ color: 'var(--text-muted)' }}>Room Code</p>
             <p className="text-3xl code-display" style={{ color: 'var(--accent)' }}>{roomCode}</p>
           </div>
-          <button onClick={copyUrl} className="btn w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-xs font-bold transition-all" style={{ background: 'var(--accent-dim)', border: '1px solid var(--border-accent)', color: 'var(--accent)' }}>
+          <button onClick={copyUrl} className="btn w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-xs font-normal transition-all" style={{ background: 'var(--accent-dim)', border: '1px solid var(--border-accent)', color: 'var(--accent)' }}>
             <IconCopy size={14} /> Copy Link
           </button>
-          <p className="text-[10px] text-center break-all px-2 font-medium" style={{ color: 'var(--text-muted)' }}>{roomUrl}</p>
+          <p className="text-[10px] text-center break-all px-2 font-normal" style={{ color: 'var(--text-muted)' }}>{roomUrl}</p>
         </div>
       </div>
     </div>
@@ -216,7 +216,7 @@ function EncryptionModal({ onSubmit, onClose, isJoining }) {
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-content p-6" onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-sm font-black uppercase tracking-wider" style={{ color: 'var(--text-primary)' }}>
+          <h3 className="text-sm font-normal uppercase tracking-wider" style={{ color: 'var(--text-primary)' }}>
             {isJoining ? 'Enter Room Key' : 'Set Encryption Key'}
           </h3>
           <button onClick={onClose} className="btn p-2 rounded-xl" style={{ color: 'var(--text-muted)', background: 'var(--bg-card)' }}>
@@ -234,13 +234,13 @@ function EncryptionModal({ onSubmit, onClose, isJoining }) {
           onKeyDown={e => e.key === 'Enter' && password.trim() && onSubmit(password.trim())}
           placeholder="Enter passphrase..."
           autoFocus
-          className="w-full px-4 py-3 rounded-xl text-sm font-semibold input-ring mb-4"
+          className="w-full px-4 py-3 rounded-xl text-sm font-normal input-ring mb-4"
           style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', color: 'var(--text-primary)' }}
         />
         <button
           onClick={() => password.trim() && onSubmit(password.trim())}
           disabled={!password.trim()}
-          className="btn w-full py-3 rounded-xl text-sm font-black uppercase tracking-wider transition-all disabled:opacity-30"
+          className="btn w-full py-3 rounded-xl text-sm font-normal uppercase tracking-wider transition-all disabled:opacity-30"
           style={{ background: 'var(--accent)', color: 'var(--bg-primary)' }}
         >
           {isJoining ? 'Decrypt Room' : 'Enable Encryption'}
@@ -266,27 +266,27 @@ function PasswordGateModal({ onSubmit, onCancel }) {
     <div className="modal-overlay">
       <div className="modal-content p-6" onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-sm font-black uppercase tracking-wider" style={{ color: 'var(--text-primary)' }}>
+          <h3 className="text-sm font-normal uppercase tracking-wider" style={{ color: 'var(--text-primary)' }}>
             Room Locked
           </h3>
         </div>
         <p className="text-xs mb-4 leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
           This room is encrypted. Enter the passphrase to access.
         </p>
-        {error && <p className="text-xs mb-3 font-bold" style={{ color: '#ef4444' }}>{error}</p>}
+        {error && <p className="text-xs mb-3 font-normal" style={{ color: '#ef4444' }}>{error}</p>}
         <input
           type="password" value={password}
           onChange={e => setPassword(e.target.value)}
           onKeyDown={e => e.key === 'Enter' && handleSubmit()}
           placeholder="Enter room passphrase..."
           autoFocus
-          className="w-full px-4 py-3 rounded-xl text-sm font-semibold input-ring mb-4"
+          className="w-full px-4 py-3 rounded-xl text-sm font-normal input-ring mb-4"
           style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', color: 'var(--text-primary)' }}
         />
         <div className="flex gap-3">
           <button
             onClick={onCancel}
-            className="btn flex-1 py-3 rounded-xl text-sm font-bold transition-all"
+            className="btn flex-1 py-3 rounded-xl text-sm font-normal transition-all"
             style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', color: 'var(--text-secondary)' }}
           >
             Back
@@ -294,7 +294,7 @@ function PasswordGateModal({ onSubmit, onCancel }) {
           <button
             onClick={handleSubmit}
             disabled={!password.trim()}
-            className="btn flex-1 py-3 rounded-xl text-sm font-black uppercase tracking-wider transition-all disabled:opacity-30"
+            className="btn flex-1 py-3 rounded-xl text-sm font-normal uppercase tracking-wider transition-all disabled:opacity-30"
             style={{ background: 'var(--accent)', color: 'var(--bg-primary)' }}
           >
             Unlock
@@ -311,15 +311,15 @@ function ConfirmModal({ title, message, onConfirm, onClose, confirmLabel = 'Conf
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-content p-6" onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-sm font-black uppercase tracking-wider" style={{ color: 'var(--text-primary)' }}>{title}</h3>
+          <h3 className="text-sm font-normal uppercase tracking-wider" style={{ color: 'var(--text-primary)' }}>{title}</h3>
           <button onClick={onClose} className="btn p-2 rounded-xl" style={{ color: 'var(--text-muted)', background: 'var(--bg-card)' }}>
             <IconX />
           </button>
         </div>
         <p className="text-xs mb-5 leading-relaxed" style={{ color: 'var(--text-secondary)' }}>{message}</p>
         <div className="flex gap-3">
-          <button onClick={onClose} className="btn flex-1 py-3 rounded-xl text-sm font-bold transition-all" style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', color: 'var(--text-secondary)' }}>Cancel</button>
-          <button onClick={onConfirm} className="btn flex-1 py-3 rounded-xl text-sm font-black uppercase tracking-wider transition-all" style={{ background: danger ? '#ef4444' : 'var(--accent)', color: '#fff' }}>{confirmLabel}</button>
+          <button onClick={onClose} className="btn flex-1 py-3 rounded-xl text-sm font-normal transition-all" style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', color: 'var(--text-secondary)' }}>Cancel</button>
+          <button onClick={onConfirm} className="btn flex-1 py-3 rounded-xl text-sm font-normal uppercase tracking-wider transition-all" style={{ background: danger ? '#ef4444' : 'var(--accent)', color: 'var(--bg-primary)' }}>{confirmLabel}</button>
         </div>
       </div>
     </div>
@@ -339,7 +339,7 @@ function HoldRoomModal({ onSubmit, onClose }) {
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-content p-6" onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-sm font-black uppercase tracking-wider" style={{ color: 'var(--text-primary)' }}>Hold Room</h3>
+          <h3 className="text-sm font-normal uppercase tracking-wider" style={{ color: 'var(--text-primary)' }}>Hold Room</h3>
           <button onClick={onClose} className="btn p-2 rounded-xl" style={{ color: 'var(--text-muted)', background: 'var(--bg-card)' }}>
             <IconX />
           </button>
@@ -355,8 +355,8 @@ function HoldRoomModal({ onSubmit, onClose }) {
               className="btn py-4 rounded-xl text-center transition-all"
               style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', color: 'var(--text-primary)' }}
             >
-              <div className="text-lg font-black">{d.hours}h</div>
-              <div className="text-[10px] font-semibold uppercase tracking-wider mt-1" style={{ color: 'var(--text-muted)' }}>{d.label}</div>
+              <div className="text-lg font-normal">{d.hours}h</div>
+              <div className="text-[10px] font-normal uppercase tracking-wider mt-1" style={{ color: 'var(--text-muted)' }}>{d.label}</div>
             </button>
           ))}
         </div>
@@ -389,10 +389,10 @@ function LandingPage({ onCreateRoom, onJoinRoom, publicRooms, onJoinPublic, onSc
           <div className="mb-6 flex justify-center" style={{ color: 'var(--accent)' }}>
             <Logo size={56} />
           </div>
-          <h1 className="text-4xl sm:text-5xl font-black font-brand tracking-wider mb-3 lowercase" style={{ color: 'var(--text-primary)' }}>
+          <h1 className="text-4xl sm:text-5xl font-normal font-brand tracking-wider mb-3 lowercase" style={{ color: 'var(--text-primary)' }}>
             beenhollow
           </h1>
-          <p className="text-sm font-medium" style={{ color: 'var(--text-muted)' }}>
+          <p className="text-sm font-normal" style={{ color: 'var(--text-muted)' }}>
             Drop files into the void.
           </p>
         </div>
@@ -407,8 +407,8 @@ function LandingPage({ onCreateRoom, onJoinRoom, publicRooms, onJoinPublic, onSc
           >
             <div className="flex items-center justify-between w-full">
               <div>
-                <div className="text-sm font-black uppercase tracking-wider">Create Room</div>
-                <div className="text-[11px] font-medium mt-1 opacity-50">Start a new void</div>
+                <div className="text-sm font-normal uppercase tracking-wider">Create Room</div>
+                <div className="text-[11px] font-normal mt-1 opacity-50">Start a new void</div>
               </div>
               <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: 'rgba(255,255,255,0.15)' }}>
                 <IconPlus size={20} />
@@ -419,7 +419,7 @@ function LandingPage({ onCreateRoom, onJoinRoom, publicRooms, onJoinPublic, onSc
           {/* Join Room */}
           <div className="rounded-2xl overflow-hidden" style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)' }}>
             <div className="p-5">
-              <div className="text-sm font-black uppercase tracking-wider mb-4" style={{ color: 'var(--text-primary)' }}>Join Room</div>
+              <div className="text-sm font-normal uppercase tracking-wider mb-4" style={{ color: 'var(--text-primary)' }}>Join Room</div>
               <div className="flex gap-2">
                 <input
                   type="text" value={joinCode}
@@ -427,16 +427,16 @@ function LandingPage({ onCreateRoom, onJoinRoom, publicRooms, onJoinPublic, onSc
                   onKeyDown={e => e.key === 'Enter' && handleJoin()}
                   placeholder="ENTER CODE"
                   maxLength={5}
-                  className="flex-1 px-4 py-3 rounded-xl text-sm font-bold text-center code-display input-ring"
+                  className="flex-1 px-4 py-3 rounded-xl text-sm font-normal text-center code-display input-ring"
                   style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-subtle)', color: 'var(--text-primary)' }}
                 />
-                <button onClick={handleJoin} className="btn px-5 py-3 rounded-xl text-sm font-black transition-all" style={{ background: 'var(--accent-dim)', border: '1px solid var(--border-accent)', color: 'var(--accent)' }}>
+                <button onClick={handleJoin} className="btn px-5 py-3 rounded-xl text-sm font-normal transition-all" style={{ background: 'var(--accent-dim)', border: '1px solid var(--border-accent)', color: 'var(--accent)' }}>
                   Go
                 </button>
               </div>
             </div>
             <div className="px-5 pb-4">
-              <button onClick={() => setShowScanner(true)} className="btn w-full flex items-center justify-center gap-2 py-3 rounded-xl text-xs font-bold transition-all" style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-subtle)', color: 'var(--text-secondary)' }}>
+              <button onClick={() => setShowScanner(true)} className="btn w-full flex items-center justify-center gap-2 py-3 rounded-xl text-xs font-normal transition-all" style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-subtle)', color: 'var(--text-secondary)' }}>
                 <IconCamera size={16} /> Scan QR Code
               </button>
             </div>
@@ -448,7 +448,7 @@ function LandingPage({ onCreateRoom, onJoinRoom, publicRooms, onJoinPublic, onSc
           <div className="w-full max-w-sm mt-8">
             <div className="flex items-center gap-2 mb-3">
               <IconGlobe size={12} style={{ color: 'var(--text-muted)' }} />
-              <p className="text-[10px] font-black uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Public Rooms</p>
+              <p className="text-[10px] font-normal uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Public Rooms</p>
             </div>
             <div className="space-y-2">
               {publicRooms.map(room => (
@@ -460,8 +460,8 @@ function LandingPage({ onCreateRoom, onJoinRoom, publicRooms, onJoinPublic, onSc
                 >
                   <div className="flex items-center gap-3">
                     <div className="w-2 h-2 rounded-full" style={{ background: 'var(--accent)' }} />
-                    <span className="text-sm font-black code-display" style={{ color: 'var(--text-primary)' }}>{room.code}</span>
-                    <span className="text-[10px] font-semibold" style={{ color: 'var(--text-muted)' }}>{room.peers} online</span>
+                    <span className="text-sm font-normal code-display" style={{ color: 'var(--text-primary)' }}>{room.code}</span>
+                    <span className="text-[10px] font-normal" style={{ color: 'var(--text-muted)' }}>{room.peers} online</span>
                   </div>
                   <IconArrowRight style={{ color: 'var(--text-muted)' }} />
                 </button>
@@ -473,7 +473,7 @@ function LandingPage({ onCreateRoom, onJoinRoom, publicRooms, onJoinPublic, onSc
 
       {/* Footer credit */}
       <footer className="py-6 text-center">
-        <p className="text-[10px] font-semibold uppercase tracking-widest" style={{ color: 'var(--text-muted)' }}>
+        <p className="text-[10px] font-normal uppercase tracking-widest" style={{ color: 'var(--text-muted)' }}>
           by alchemist4real
         </p>
       </footer>
@@ -1053,7 +1053,7 @@ export default function App() {
             <div className="flex-shrink-0" style={{ color: 'var(--text-primary)' }}>
               <Logo size={24} />
             </div>
-            <h1 className="text-sm font-black font-brand tracking-wider truncate lowercase" style={{ color: 'var(--text-primary)' }}>beenhollow</h1>
+            <h1 className="text-sm font-normal font-brand tracking-wider truncate lowercase" style={{ color: 'var(--text-primary)' }}>beenhollow</h1>
           </div>
         </div>
         <div className="flex items-center gap-2 flex-shrink-0">
@@ -1063,7 +1063,7 @@ export default function App() {
               <span className={`absolute inline-flex h-full w-full rounded-full opacity-75 ${isConnected ? 'animate-ping' : ''}`} style={{ background: isConnected ? 'var(--accent)' : 'var(--text-muted)' }} />
               <span className="relative inline-flex rounded-full h-2 w-2" style={{ background: isConnected ? 'var(--accent)' : 'var(--text-muted)' }} />
             </span>
-            <span className="text-xs font-bold" style={{ color: 'var(--text-secondary)' }}>{peerCount}</span>
+            <span className="text-xs font-normal" style={{ color: 'var(--text-secondary)' }}>{peerCount}</span>
           </div>
         </div>
       </header>
@@ -1072,7 +1072,7 @@ export default function App() {
       <div className="flex-shrink-0 px-4 sm:px-6 py-2.5 flex items-center gap-2 overflow-x-auto no-scrollbar" style={{ borderBottom: '1px solid var(--border-subtle)', background: 'var(--bg-secondary)' }}>
         {/* Room code */}
         <div className="flex items-center gap-1.5 px-3 py-2 rounded-xl flex-shrink-0" style={{ background: 'var(--accent-dim)', border: '1px solid var(--border-accent)' }}>
-          <span className="text-[9px] uppercase font-black tracking-wider" style={{ color: 'var(--text-muted)' }}>Room</span>
+          <span className="text-[9px] uppercase font-normal tracking-wider" style={{ color: 'var(--text-muted)' }}>Room</span>
           <span className="code-display text-xs" style={{ color: 'var(--accent)' }}>{currentRoom}</span>
           <button onClick={copyCode} className="p-1 rounded" style={{ color: 'var(--text-muted)' }}>
             {copied ? <IconCheck style={{ color: 'var(--accent)' }} /> : <IconCopy />}
@@ -1090,26 +1090,26 @@ export default function App() {
         </button>
 
         {/* Public toggle */}
-        <button onClick={togglePublic} className="btn flex items-center gap-1.5 px-3 py-2.5 rounded-xl text-[11px] font-bold flex-shrink-0 transition-all" style={{ background: isPublic ? 'var(--accent-dim)' : 'var(--bg-card)', border: `1px solid ${isPublic ? 'var(--border-accent)' : 'var(--border-subtle)'}`, color: isPublic ? 'var(--accent)' : 'var(--text-muted)' }}>
+        <button onClick={togglePublic} className="btn flex items-center gap-1.5 px-3 py-2.5 rounded-xl text-[11px] font-normal flex-shrink-0 transition-all" style={{ background: isPublic ? 'var(--accent-dim)' : 'var(--bg-card)', border: `1px solid ${isPublic ? 'var(--border-accent)' : 'var(--border-subtle)'}`, color: isPublic ? 'var(--accent)' : 'var(--text-muted)' }}>
           {isPublic ? <IconGlobe /> : <IconLock />}
           <span className="hidden sm:inline">{isPublic ? 'Public' : 'Private'}</span>
         </button>
 
         {/* Encryption toggle */}
-        <button onClick={toggleEncryption} className={`btn flex items-center gap-1.5 px-3 py-2.5 rounded-xl text-[11px] font-bold flex-shrink-0 transition-all ${!isHost && !isEncrypted ? 'opacity-30 cursor-not-allowed' : ''}`} style={{ background: isEncrypted ? 'var(--accent-dim)' : 'var(--bg-card)', border: `1px solid ${isEncrypted ? 'var(--border-accent)' : 'var(--border-subtle)'}`, color: isEncrypted ? 'var(--accent)' : 'var(--text-muted)' }} title={isEncrypted ? 'Encrypted' : isHost ? 'Encrypt' : 'Only owner can encrypt'}>
+        <button onClick={toggleEncryption} className={`btn flex items-center gap-1.5 px-3 py-2.5 rounded-xl text-[11px] font-normal flex-shrink-0 transition-all ${!isHost && !isEncrypted ? 'opacity-30 cursor-not-allowed' : ''}`} style={{ background: isEncrypted ? 'var(--accent-dim)' : 'var(--bg-card)', border: `1px solid ${isEncrypted ? 'var(--border-accent)' : 'var(--border-subtle)'}`, color: isEncrypted ? 'var(--accent)' : 'var(--text-muted)' }} title={isEncrypted ? 'Encrypted' : isHost ? 'Encrypt' : 'Only owner can encrypt'}>
           {isEncrypted ? <IconShield /> : <IconUnlock />}
           <span className="hidden sm:inline">{isEncrypted ? 'Encrypted' : 'Encrypt'}</span>
         </button>
 
         {/* Hold room */}
-        <button onClick={() => setShowHoldModal(true)} className="btn flex items-center gap-1.5 px-3 py-2.5 rounded-xl text-[11px] font-bold flex-shrink-0 transition-all" style={{ background: holdDuration > 0 ? 'var(--accent-dim)' : 'var(--bg-card)', border: `1px solid ${holdDuration > 0 ? 'var(--border-accent)' : 'var(--border-subtle)'}`, color: holdDuration > 0 ? 'var(--accent)' : 'var(--text-muted)' }} title="Hold Room">
+        <button onClick={() => setShowHoldModal(true)} className="btn flex items-center gap-1.5 px-3 py-2.5 rounded-xl text-[11px] font-normal flex-shrink-0 transition-all" style={{ background: holdDuration > 0 ? 'var(--accent-dim)' : 'var(--bg-card)', border: `1px solid ${holdDuration > 0 ? 'var(--border-accent)' : 'var(--border-subtle)'}`, color: holdDuration > 0 ? 'var(--accent)' : 'var(--text-muted)' }} title="Hold Room">
           <IconClock />
           <span className="hidden sm:inline">{holdDuration > 0 ? `${holdDuration}h` : 'Hold'}</span>
         </button>
 
         {/* Download all */}
         {contentCount > 0 && (
-          <button onClick={downloadAllFiles} className="btn flex items-center gap-1.5 px-3 py-2.5 rounded-xl text-[11px] font-bold flex-shrink-0 transition-all" style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', color: 'var(--text-secondary)' }} title="Download All">
+          <button onClick={downloadAllFiles} className="btn flex items-center gap-1.5 px-3 py-2.5 rounded-xl text-[11px] font-normal flex-shrink-0 transition-all" style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', color: 'var(--text-secondary)' }} title="Download All">
             <IconArchive />
             <span className="hidden sm:inline">All ({contentCount})</span>
           </button>
@@ -1117,7 +1117,7 @@ export default function App() {
 
         {/* Empty room (host only) */}
         {isHost && messages.length > 0 && (
-          <button onClick={() => setShowConfirmEmpty(true)} className="btn flex items-center gap-1.5 px-3 py-2.5 rounded-xl text-[11px] font-bold flex-shrink-0 transition-all" style={{ background: 'var(--bg-card)', border: '1px solid #ef4444', color: '#ef4444' }} title="Empty Room">
+          <button onClick={() => setShowConfirmEmpty(true)} className="btn flex items-center gap-1.5 px-3 py-2.5 rounded-xl text-[11px] font-normal flex-shrink-0 transition-all" style={{ background: 'var(--bg-card)', border: '1px solid #ef4444', color: '#ef4444' }} title="Empty Room">
             <IconTrash2 />
             <span className="hidden sm:inline">Empty</span>
           </button>
@@ -1130,7 +1130,7 @@ export default function App() {
         <button onClick={() => setShowPublicRooms(!showPublicRooms)} className="btn p-2.5 rounded-xl flex-shrink-0 transition-all relative" style={{ background: showPublicRooms ? 'var(--accent-dim)' : 'var(--bg-card)', border: `1px solid ${showPublicRooms ? 'var(--border-accent)' : 'var(--border-subtle)'}`, color: showPublicRooms ? 'var(--accent)' : 'var(--text-muted)' }}>
           <IconGlobe />
           {publicRooms.length > 0 && (
-            <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full text-[8px] font-black flex items-center justify-center" style={{ background: 'var(--accent)', color: 'var(--bg-primary)' }}>{publicRooms.length}</span>
+            <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full text-[8px] font-normal flex items-center justify-center" style={{ background: 'var(--accent)', color: 'var(--bg-primary)' }}>{publicRooms.length}</span>
           )}
         </button>
       </div>
@@ -1139,7 +1139,7 @@ export default function App() {
       {showPublicRooms && (
         <div className="flex-shrink-0 px-4 sm:px-6 py-3 fade-in" style={{ borderBottom: '1px solid var(--border-subtle)', background: 'var(--bg-secondary)' }}>
           <div className="flex items-center justify-between mb-2">
-            <p className="text-[10px] font-black uppercase tracking-wider" style={{ color: 'var(--text-secondary)' }}>Public Rooms</p>
+            <p className="text-[10px] font-normal uppercase tracking-wider" style={{ color: 'var(--text-secondary)' }}>Public Rooms</p>
             <button onClick={() => setShowPublicRooms(false)} className="p-1 rounded" style={{ color: 'var(--text-muted)' }}><IconX /></button>
           </div>
           {publicRooms.length === 0 ? (
@@ -1149,8 +1149,8 @@ export default function App() {
               {publicRooms.map(room => (
                 <button key={room.code} onClick={() => joinRoom(room.code)} className="btn flex-shrink-0 px-4 py-2.5 rounded-xl flex items-center gap-2 transition-all" style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)' }}>
                   <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: 'var(--accent)' }} />
-                  <span className="text-xs font-black code-display" style={{ color: 'var(--text-primary)' }}>{room.code}</span>
-                  <span className="text-[10px] font-semibold" style={{ color: 'var(--text-muted)' }}>{room.peers}</span>
+                  <span className="text-xs font-normal code-display" style={{ color: 'var(--text-primary)' }}>{room.code}</span>
+                  <span className="text-[10px] font-normal" style={{ color: 'var(--text-muted)' }}>{room.peers}</span>
                   <IconArrowRight style={{ color: 'var(--text-muted)' }} />
                 </button>
               ))}
@@ -1164,7 +1164,7 @@ export default function App() {
         {isLoadingHistory && (
           <div className="flex items-center justify-center py-4 fade-in">
             <IconLoader size={16} style={{ color: 'var(--text-muted)' }} />
-            <span className="ml-2 text-xs font-semibold" style={{ color: 'var(--text-muted)' }}>Loading saved messages...</span>
+            <span className="ml-2 text-xs font-normal" style={{ color: 'var(--text-muted)' }}>Loading saved messages...</span>
           </div>
         )}
 
@@ -1177,21 +1177,21 @@ export default function App() {
                 </div>
               </div>
               <div>
-                <h2 className="text-xl font-black mb-2 uppercase tracking-tight" style={{ color: 'var(--text-primary)' }}>The Void Awaits</h2>
-                <p className="text-xs leading-relaxed font-medium" style={{ color: 'var(--text-muted)' }}>
+                <h2 className="text-xl font-normal mb-2 uppercase tracking-tight" style={{ color: 'var(--text-primary)' }}>The Void Awaits</h2>
+                <p className="text-xs leading-relaxed font-normal" style={{ color: 'var(--text-muted)' }}>
                   Drop files and text into this room. Share via QR code or room code.
                 </p>
               </div>
               <div className="p-5 rounded-2xl text-left" style={{ background: 'var(--bg-card)', border: '1px solid var(--border-accent)' }}>
                 <div className="text-center mb-4">
-                  <p className="text-[9px] uppercase font-black mb-1 tracking-wider" style={{ color: 'var(--text-muted)' }}>Your Room</p>
+                  <p className="text-[9px] uppercase font-normal mb-1 tracking-wider" style={{ color: 'var(--text-muted)' }}>Your Room</p>
                   <p className="text-3xl code-display" style={{ color: 'var(--accent)' }}>{currentRoom}</p>
                 </div>
                 <div className="flex gap-2">
-                  <button onClick={() => setShowQR(true)} className="btn flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-xs font-bold transition-all" style={{ background: 'var(--accent)', color: 'var(--bg-primary)' }}>
+                  <button onClick={() => setShowQR(true)} className="btn flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-xs font-normal transition-all" style={{ background: 'var(--accent)', color: 'var(--bg-primary)' }}>
                     <IconQR size={14} /> Share QR
                   </button>
-                  <button onClick={() => setShowScanner(true)} className="btn flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-xs font-bold transition-all" style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-subtle)', color: 'var(--text-secondary)' }}>
+                  <button onClick={() => setShowScanner(true)} className="btn flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-xs font-normal transition-all" style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-subtle)', color: 'var(--text-secondary)' }}>
                     <IconCamera size={14} /> Scan QR
                   </button>
                 </div>
@@ -1204,7 +1204,7 @@ export default function App() {
               if (msg.type === 'system') {
                 return (
                   <div key={msg.id} className="card-enter text-center py-1.5" style={{ animationDelay: `${Math.min(idx * 20, 200)}ms` }}>
-                    <span className="text-[10px] px-4 py-1.5 rounded-full font-bold uppercase tracking-wider" style={{ background: 'var(--bg-card)', color: 'var(--text-muted)', border: '1px solid var(--border-subtle)' }}>{msg.text}</span>
+                    <span className="text-[10px] px-4 py-1.5 rounded-full font-normal uppercase tracking-wider" style={{ background: 'var(--bg-card)', color: 'var(--text-muted)', border: '1px solid var(--border-subtle)' }}>{msg.text}</span>
                   </div>
                 );
               }
@@ -1216,11 +1216,11 @@ export default function App() {
                         <IconText style={{ color: msg.isMe ? 'var(--bg-primary)' : 'var(--text-muted)' }} />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm leading-relaxed whitespace-pre-wrap break-words font-medium" style={{ color: 'var(--text-primary)' }}>
+                        <p className="text-sm leading-relaxed whitespace-pre-wrap break-words font-normal" style={{ color: 'var(--text-primary)' }}>
                           <Linkify text={msg.text} />
                         </p>
                         <div className="flex items-center gap-2 mt-2">
-                          <span className="text-[10px] font-bold" style={{ color: 'var(--text-muted)' }}>{msg.isMe ? 'You' : msg.sender || 'Remote'}</span>
+                          <span className="text-[10px] font-normal" style={{ color: 'var(--text-muted)' }}>{msg.isMe ? 'You' : msg.sender || 'Remote'}</span>
                           <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>{fmtTime(msg.time)}</span>
                           {msg.encrypted && <IconShield size={10} style={{ color: 'var(--text-muted)' }} />}
                           {msg.persisted && <IconClock size={10} style={{ color: 'var(--text-muted)' }} />}
@@ -1254,11 +1254,11 @@ export default function App() {
                     <div className="flex items-center gap-3">
                       <div className="w-12 h-12 rounded-xl flex flex-col items-center justify-center flex-shrink-0" style={{ background: msg.isMe ? 'var(--accent)' : 'var(--bg-card)', border: msg.isMe ? 'none' : '1px solid var(--border-subtle)' }}>
                         <IconFile style={{ color: msg.isMe ? 'var(--bg-primary)' : 'var(--text-secondary)' }} />
-                        <span className="text-[7px] font-black mt-0.5" style={{ color: msg.isMe ? 'var(--bg-primary)' : 'var(--text-secondary)' }}>{ext(msg.fileName)}</span>
+                        <span className="text-[7px] font-normal mt-0.5" style={{ color: msg.isMe ? 'var(--bg-primary)' : 'var(--text-secondary)' }}>{ext(msg.fileName)}</span>
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-bold truncate" style={{ color: 'var(--text-primary)' }} title={msg.fileName}>{msg.fileName}</p>
-                        <p className="text-[10px] mt-0.5 font-semibold" style={{ color: 'var(--text-muted)' }}>{fmt(msg.fileSize)}</p>
+                        <p className="text-sm font-normal truncate" style={{ color: 'var(--text-primary)' }} title={msg.fileName}>{msg.fileName}</p>
+                        <p className="text-[10px] mt-0.5 font-normal" style={{ color: 'var(--text-muted)' }}>{fmt(msg.fileSize)}</p>
                       </div>
                       {msg.url && (
                         <a href={msg.url} download={msg.fileName} className="btn p-3 rounded-xl flex-shrink-0 transition-all" style={{ background: 'var(--accent)', color: 'var(--bg-primary)' }}>
@@ -1277,7 +1277,7 @@ export default function App() {
                       )}
                     </div>
                     <div className="flex items-center gap-2 mt-3 pt-3" style={{ borderTop: '1px solid var(--border-subtle)' }}>
-                      <span className="text-[10px] font-bold" style={{ color: 'var(--text-muted)' }}>{msg.isMe ? 'You' : msg.sender || 'Remote'}</span>
+                      <span className="text-[10px] font-normal" style={{ color: 'var(--text-muted)' }}>{msg.isMe ? 'You' : msg.sender || 'Remote'}</span>
                       <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>{fmtTime(msg.time)}</span>
                       {msg.persisted && <IconClock size={10} style={{ color: 'var(--text-muted)' }} />}
                     </div>
@@ -1291,8 +1291,8 @@ export default function App() {
               <div key={`dl-${fileId}`} className="card-enter message-bubble p-4 sm:p-5">
                 <div className="flex items-center gap-3 mb-3">
                   <IconLoader size={14} style={{ color: 'var(--accent)' }} />
-                  <span className="text-xs font-bold" style={{ color: 'var(--text-secondary)' }}>Receiving file...</span>
-                  <span className="ml-auto text-xs font-black code-display" style={{ color: 'var(--accent)' }}>{pct}%</span>
+                  <span className="text-xs font-normal" style={{ color: 'var(--text-secondary)' }}>Receiving file...</span>
+                  <span className="ml-auto text-xs font-normal code-display" style={{ color: 'var(--accent)' }}>{pct}%</span>
                 </div>
                 <div className="w-full rounded-full h-1.5" style={{ background: 'var(--bg-card)' }}>
                   <div className="progress-bar h-1.5" style={{ width: `${pct}%` }} />
@@ -1309,12 +1309,12 @@ export default function App() {
         {/* Status indicators */}
         <div className="max-w-3xl mx-auto flex items-center gap-2 mb-2 flex-wrap">
           {isEncrypted && (
-            <span className="encrypt-badge flex items-center gap-1 px-2 py-1 rounded-lg text-[9px] font-bold uppercase tracking-wider" style={{ background: 'var(--accent-dim)', border: '1px solid var(--border-accent)', color: 'var(--accent)' }}>
+            <span className="encrypt-badge flex items-center gap-1 px-2 py-1 rounded-lg text-[9px] font-normal uppercase tracking-wider" style={{ background: 'var(--accent-dim)', border: '1px solid var(--border-accent)', color: 'var(--accent)' }}>
               <IconShield size={10} /> Encrypted
             </span>
           )}
           {holdDuration > 0 && (
-            <span className="flex items-center gap-1 px-2 py-1 rounded-lg text-[9px] font-bold uppercase tracking-wider" style={{ background: 'var(--accent-dim)', border: '1px solid var(--border-accent)', color: 'var(--accent)' }}>
+            <span className="flex items-center gap-1 px-2 py-1 rounded-lg text-[9px] font-normal uppercase tracking-wider" style={{ background: 'var(--accent-dim)', border: '1px solid var(--border-accent)', color: 'var(--accent)' }}>
               <IconClock size={10} /> Held {holdDuration}h
             </span>
           )}
@@ -1323,8 +1323,8 @@ export default function App() {
         {isSending && uploadProgress > 0 && (
           <div className="max-w-3xl mx-auto mb-2">
             <div className="flex justify-between items-center mb-1">
-              <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Sending...</span>
-              <span className="text-[10px] font-black code-display" style={{ color: 'var(--accent)' }}>{uploadProgress}%</span>
+              <span className="text-[10px] font-normal uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Sending...</span>
+              <span className="text-[10px] font-normal code-display" style={{ color: 'var(--accent)' }}>{uploadProgress}%</span>
             </div>
             <div className="w-full rounded-full h-1.5" style={{ background: 'var(--bg-card)' }}><div className="progress-bar h-1.5" style={{ width: `${uploadProgress}%` }} /></div>
           </div>
@@ -1339,7 +1339,7 @@ export default function App() {
             onChange={e => setInputText(e.target.value)}
             placeholder={isConnected ? "Drop into the void..." : "Waiting for peers..."}
             disabled={!isConnected}
-            className="flex-1 bg-transparent border-none text-sm py-3 px-2 focus:outline-none disabled:opacity-40 min-w-0 font-medium"
+            className="flex-1 bg-transparent border-none text-sm py-3 px-2 focus:outline-none disabled:opacity-40 min-w-0 font-normal"
             style={{ color: 'var(--text-primary)' }}
           />
           <button type="submit" disabled={!inputText.trim() || !isConnected} className="btn p-3 rounded-xl flex-shrink-0 disabled:opacity-20 transition-all" style={{ background: inputText.trim() && isConnected ? 'var(--accent)' : 'var(--bg-card)', color: inputText.trim() && isConnected ? 'var(--bg-primary)' : 'var(--text-muted)' }}>
@@ -1348,14 +1348,14 @@ export default function App() {
         </form>
         {!isConnected && (
           <p className="max-w-3xl mx-auto text-center mt-2">
-            <span className="text-[10px] font-bold" style={{ color: 'var(--text-muted)' }}>
+            <span className="text-[10px] font-normal" style={{ color: 'var(--text-muted)' }}>
               Share code <strong className="code-display" style={{ color: 'var(--accent)' }}>{currentRoom}</strong> or scan QR to connect
             </span>
           </p>
         )}
         {/* Credit */}
         <p className="text-center mt-2">
-          <span className="text-[9px] font-semibold uppercase tracking-widest" style={{ color: 'var(--text-muted)', opacity: 0.5 }}>by alchemist4real</span>
+          <span className="text-[9px] font-normal uppercase tracking-widest" style={{ color: 'var(--text-muted)', opacity: 0.5 }}>by alchemist4real</span>
         </p>
       </footer>
 
