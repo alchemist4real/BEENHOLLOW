@@ -168,7 +168,7 @@ function QRDisplayModal({ roomCode, onClose }) {
   useEffect(() => {
     QRCode.toDataURL(roomUrl, {
       width: 280, margin: 2,
-      color: { dark: '#000000', light: '#fafafa' },
+      color: { dark: '#000000', light: '#f4ff1e' },
       errorCorrectionLevel: 'M'
     }).then(setQrDataUrl).catch(console.error);
   }, [roomUrl]);
@@ -386,10 +386,10 @@ function LandingPage({ onCreateRoom, onJoinRoom, publicRooms, onJoinPublic, onSc
       <div className="flex-1 flex flex-col items-center justify-center px-6 py-12">
         {/* Logo & Title */}
         <div className="text-center mb-12">
-          <div className="mb-6 flex justify-center" style={{ color: 'var(--text-primary)' }}>
+          <div className="mb-6 flex justify-center" style={{ color: 'var(--accent)' }}>
             <Logo size={56} />
           </div>
-          <h1 className="text-4xl sm:text-5xl font-black tracking-tighter mb-3" style={{ color: 'var(--text-primary)', letterSpacing: '-0.04em' }}>
+          <h1 className="text-4xl sm:text-5xl font-black font-brand tracking-wider mb-3" style={{ color: 'var(--text-primary)' }}>
             BEENHOLLOW
           </h1>
           <p className="text-sm font-medium" style={{ color: 'var(--text-muted)' }}>
@@ -1053,7 +1053,7 @@ export default function App() {
             <div className="flex-shrink-0" style={{ color: 'var(--text-primary)' }}>
               <Logo size={24} />
             </div>
-            <h1 className="text-sm font-black tracking-tight truncate uppercase" style={{ color: 'var(--text-primary)' }}>BEENHOLLOW</h1>
+            <h1 className="text-sm font-black font-brand tracking-wider truncate uppercase" style={{ color: 'var(--text-primary)' }}>BEENHOLLOW</h1>
           </div>
         </div>
         <div className="flex items-center gap-2 flex-shrink-0">

@@ -1,30 +1,88 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700;800;900&display=swap');
 
+/* ------------------------------------------------------------------
+   Self-Hosted Brand Typography: Bitcount (TYPETR by Petr van Blokland)
+   ------------------------------------------------------------------ */
+
+@font-face {
+  font-family: 'Bitcount';
+  src: url('/fonts/BitcountPropSingle.ttf') format('truetype');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Bitcount Prop';
+  src: url('/fonts/BitcountPropSingle.ttf') format('truetype');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Bitcount Grid';
+  src: url('/fonts/BitcountGridSingle.ttf') format('truetype');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Bitcount Single';
+  src: url('/fonts/BitcountSingle.ttf') format('truetype');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Bitcount Double';
+  src: url('/fonts/BitcountPropDouble.ttf') format('truetype');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Bitcount Grid Double';
+  src: url('/fonts/BitcountGridDouble.ttf') format('truetype');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 /* ------------------------------------------------------------------
-   Theme: White Void Monochromatic
+   Theme: MELLOW Yellow (#F4FF1E) & Electric Blue (#1F6AEC)
    ------------------------------------------------------------------ */
 
 :root {
-  --bg-primary: #fafafa;
-  --bg-secondary: #f2f2f2;
-  --bg-card: rgba(0, 0, 0, 0.02);
-  --bg-card-hover: rgba(0, 0, 0, 0.05);
-  --border-subtle: rgba(0, 0, 0, 0.08);
-  --border-accent: rgba(0, 0, 0, 0.2);
+  --font-brand: 'Bitcount', 'Bitcount Prop', 'Bitcount Grid', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-display: 'Bitcount', 'Bitcount Prop', 'Bitcount Grid', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-brand-grid: 'Bitcount Grid', 'Bitcount', 'JetBrains Mono', monospace;
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: 'Bitcount Grid', 'JetBrains Mono', monospace;
+
+  --bg-primary: #f4ff1e;
+  --bg-secondary: #e6f014;
+  --bg-card: rgba(10, 10, 10, 0.05);
+  --bg-card-hover: rgba(10, 10, 10, 0.09);
+  --border-subtle: rgba(10, 10, 10, 0.16);
+  --border-accent: #1f6aec;
   --text-primary: #0a0a0a;
-  --text-secondary: #444444;
-  --text-muted: #888888;
-  --accent: #111111;
-  --accent-dim: rgba(0, 0, 0, 0.06);
-  --accent-glow: rgba(0, 0, 0, 0.1);
-  --green: #333333;
-  --green-dim: rgba(0, 0, 0, 0.06);
+  --text-secondary: #1f6aec;
+  --text-muted: rgba(10, 10, 10, 0.65);
+  --accent: #1f6aec;
+  --accent-dim: rgba(31, 106, 236, 0.15);
+  --accent-glow: rgba(31, 106, 236, 0.35);
+  --green: #0a0a0a;
+  --green-dim: rgba(10, 10, 10, 0.08);
   --danger: #dc2626;
-  --danger-dim: rgba(220, 38, 38, 0.08);
+  --danger-dim: rgba(220, 38, 38, 0.12);
 }
 
 /* ------------------------------------------------------------------
@@ -111,10 +169,26 @@ body {
    Typography
    ------------------------------------------------------------------ */
 
-h1, h2, h3, h4, h5, h6 {
+h1, h2, h3 {
+  font-family: var(--font-brand);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--text-primary);
+}
+
+h4, h5, h6 {
   font-weight: 800;
   letter-spacing: -0.02em;
   color: var(--text-primary);
+}
+
+.font-brand,
+.font-display {
+  font-family: var(--font-brand);
+}
+
+.font-brand-grid {
+  font-family: var(--font-brand-grid);
 }
 
 /* ------------------------------------------------------------------
@@ -163,13 +237,13 @@ h1, h2, h3, h4, h5, h6 {
    ------------------------------------------------------------------ */
 
 .code-display {
-  font-family: 'JetBrains Mono', monospace;
-  letter-spacing: 0.2em;
-  font-weight: 900;
+  font-family: 'Bitcount Grid', 'JetBrains Mono', monospace;
+  letter-spacing: 0.16em;
+  font-weight: 800;
 }
 
 .font-mono {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: 'Bitcount Grid', 'JetBrains Mono', monospace;
 }
 
 /* ------------------------------------------------------------------
@@ -177,7 +251,7 @@ h1, h2, h3, h4, h5, h6 {
    ------------------------------------------------------------------ */
 
 .progress-bar {
-  background: linear-gradient(90deg, #111111, #333333);
+  background: linear-gradient(90deg, var(--accent), #0a0a0a);
   border-radius: 999px;
   transition: width 0.3s ease;
 }
@@ -188,7 +262,7 @@ h1, h2, h3, h4, h5, h6 {
 
 .input-ring:focus {
   outline: none;
-  box-shadow: 0 0 0 2px var(--accent-dim);
+  box-shadow: 0 0 0 2px var(--accent);
 }
 
 /* ------------------------------------------------------------------
@@ -197,7 +271,7 @@ h1, h2, h3, h4, h5, h6 {
 
 .grid-bg {
   background-color: var(--bg-primary);
-  background-image: radial-gradient(circle, rgba(0, 0, 0, 0.06) 1px, transparent 1px);
+  background-image: radial-gradient(circle, rgba(31, 106, 236, 0.18) 1.5px, transparent 1.5px);
   background-size: 24px 24px;
 }
 
@@ -208,9 +282,9 @@ h1, h2, h3, h4, h5, h6 {
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(255, 255, 255, 0.8);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
+  background: rgba(244, 255, 30, 0.75);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   z-index: 100;
   display: flex;
   align-items: center;
@@ -220,14 +294,14 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .modal-content {
-  background: #ffffff;
-  border: 1px solid var(--border-subtle);
+  background: #f4ff1e;
+  border: 1.5px solid var(--text-primary);
   border-radius: 20px;
   width: 100%;
   max-width: 360px;
   max-height: 90vh;
   overflow-y: auto;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08), 0 1px 4px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.16), 4px 4px 0px #0a0a0a;
   animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
